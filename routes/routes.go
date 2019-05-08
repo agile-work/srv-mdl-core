@@ -20,7 +20,7 @@ func Setup() *chi.Mux {
 	// 	cryo.Cors().Handler,
 	// )
 
-	router.Route("/api/v1/core", func(r chi.Router) {
+	router.Route("/core", func(r chi.Router) {
 		r.Mount("/admin/configs", admin.ConfigRoutes())
 		r.Mount("/admin/users", admin.UserRoutes())
 		r.Mount("/admin/schemas", admin.SchemaRoutes())
