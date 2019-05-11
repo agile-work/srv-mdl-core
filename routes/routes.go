@@ -1,6 +1,7 @@
 package routes
 
 import (
+	core "github.com/agile-work/srv-mdl-core/middlewares"
 	"github.com/agile-work/srv-mdl-core/routes/admin"
 	"github.com/agile-work/srv-mdl-core/routes/auth"
 	"github.com/go-chi/chi"
@@ -9,6 +10,11 @@ import (
 // Setup configure the API endpoints
 func Setup() *chi.Mux {
 	router := chi.NewRouter()
+
+	router.Use(
+		core.Cors().Handler,
+		core.Authorization,
+	)
 	//TODO: Retirar router.use
 	// router.Use(
 	// 	render.SetContentType(render.ContentTypeJSON),
@@ -23,6 +29,7 @@ func Setup() *chi.Mux {
 	router.Route("/core", func(r chi.Router) {
 		r.Mount("/admin/configs", admin.ConfigRoutes())
 		r.Mount("/admin/users", admin.UserRoutes())
+		r.Mount("/admin/trees", admin.TreeRoutes())
 		r.Mount("/admin/schemas", admin.SchemaRoutes())
 		r.Mount("/admin/structures", admin.StructureRoutes())
 		r.Mount("/admin/widgets", admin.WidgetRoutes())
@@ -30,7 +37,7 @@ func Setup() *chi.Mux {
 		r.Mount("/admin/groups", admin.GroupRoutes())
 		r.Mount("/admin/currencies", admin.CurrencyRoutes())
 		r.Mount("/admin/jobs", admin.JobRoutes())
-		r.Mount("/auth", auth.Routes())
+		r.Mount("/admin/auth", auth.Routes())
 	})
 
 	return router

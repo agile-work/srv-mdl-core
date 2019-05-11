@@ -31,6 +31,16 @@ func SchemaRoutes() *chi.Mux {
 		r.Get("/{schema_id}/pages/{page_id}", controller.GetPage)
 		r.Patch("/{schema_id}/pages/{page_id}", controller.UpdatePage)
 		r.Delete("/{schema_id}/pages/{page_id}", controller.DeletePage)
+		r.Post("/{schema_id}/pages/{page_id}/sections", controller.PostSection)
+		r.Get("/{schema_id}/pages/{page_id}/sections", controller.GetAllSections)
+		r.Get("/{schema_id}/pages/{page_id}/sections/{section_id}", controller.GetSection)
+		r.Patch("/{schema_id}/pages/{page_id}/sections/{section_id}", controller.UpdateSection)
+		r.Delete("/{schema_id}/pages/{page_id}/sections/{section_id}", controller.DeleteSection)
+		r.Post("/{schema_id}/views", controller.PostView)
+		r.Get("/{schema_id}/views", controller.GetAllViews)
+		r.Get("/{schema_id}/views/{view_id}", controller.GetView)
+		r.Patch("/{schema_id}/views/{view_id}", controller.UpdateView)
+		r.Delete("/{schema_id}/views/{view_id}", controller.DeleteView)
 	})
 
 	return r

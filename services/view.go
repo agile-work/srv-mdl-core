@@ -111,15 +111,15 @@ func LoadAllPagesByView(r *http.Request) *moduleShared.Response {
 
 	page := []models.Page{}
 	viewID := chi.URLParam(r, "view_id")
-	tblTranslationName := fmt.Sprintf("%s as %s_name", shared.TableCoreTranslations, shared.TableCoreTranslations)
-	tblTranslationDescription := fmt.Sprintf("%s as %s_description", shared.TableCoreTranslations, shared.TableCoreTranslations)
+	tblTranslationName := fmt.Sprintf("%s AS %s_name", shared.TableCoreTranslations, shared.TableCoreTranslations)
+	tblTranslationDescription := fmt.Sprintf("%s AS %s_description", shared.TableCoreTranslations, shared.TableCoreTranslations)
 	languageCode := r.Header.Get("Content-Language")
 
 	statemant := builder.Select(
 		"core_sch_pages.id",
 		"core_sch_pages.code",
-		"core_translations_name.value as name",
-		"core_translations_description.value as description",
+		"core_translations_name.value AS name",
+		"core_translations_description.value AS description",
 		"core_sch_pages.schema_id",
 		"core_sch_pages.type",
 		"core_sch_pages.active",
