@@ -31,7 +31,6 @@ func Setup() *chi.Mux {
 		r.Mount("/admin/users", admin.UserRoutes())
 		r.Mount("/admin/trees", admin.TreeRoutes())
 		r.Mount("/admin/schemas", admin.SchemaRoutes())
-		r.Mount("/admin/structures", admin.StructureRoutes())
 		r.Mount("/admin/widgets", admin.WidgetRoutes())
 		r.Mount("/admin/lookups", admin.LookupRoutes())
 		r.Mount("/admin/groups", admin.GroupRoutes())
