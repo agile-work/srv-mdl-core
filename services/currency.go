@@ -60,7 +60,10 @@ func DeleteCurrency(r *http.Request) *moduleShared.Response {
 
 // CreateCurrencyRate persists the request body creating a new object in the database
 func CreateCurrencyRate(r *http.Request) *moduleShared.Response {
-	currencyRate := models.CurrencyRate{}
+	currencyID := chi.URLParam(r, "currency_id")
+	currencyRate := models.CurrencyRate{
+		FromCurrencyID: currencyID,
+	}
 
 	return db.Create(r, &currencyRate, "CreateCurrencyRate", shared.TableCoreCryRates)
 }

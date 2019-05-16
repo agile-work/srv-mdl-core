@@ -15,7 +15,12 @@ import (
 
 // CreateSection persists the request body creating a new object in the database
 func CreateSection(r *http.Request) *moduleShared.Response {
-	section := models.Section{}
+	schemaID := chi.URLParam(r, "schema_id")
+	pageID := chi.URLParam(r, "page_id")
+	section := models.Section{
+		SchemaID: schemaID,
+		PageID:   pageID,
+	}
 
 	return db.Create(r, &section, "CreateSection", shared.TableCoreSchPagSections)
 }

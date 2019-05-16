@@ -18,8 +18,33 @@ import (
 // CreateSchema persists the request body creating a new object in the database
 func CreateSchema(r *http.Request) *moduleShared.Response {
 	schema := models.Schema{}
+	responseCreateSchema := db.Create(r, &schema, "CreateSchema", shared.TableCoreSchemas)
 
-	return db.Create(r, &schema, "CreateSchema", shared.TableCoreSchemas)
+	params := map[string]interface{}{
+		"schema_id":   schema.ID,
+		"schema_name": schema.Name,
+	}
+
+	id, responseJob := moduleShared.ExecJob(schema.CreatedBy, moduleShared.JobSystemCreateSchema, params)
+	if responseJob != nil {
+		return responseJob
+	}
+
+	schema.JobID = id
+	schema.Status = "done"
+	schemaIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchemas)
+	condition := builder.Equal(schemaIDColumn, schema.ID)
+
+	err := sql.UpdateStruct(shared.TableCoreSchemas, &schema, condition, "status")
+	if err != nil {
+		responseUpdateSchema := &moduleShared.Response{}
+		responseUpdateSchema.Code = http.StatusInternalServerError
+		responseUpdateSchema.Errors = append(responseUpdateSchema.Errors, moduleShared.NewResponseError(moduleShared.ErrorInsertingRecord, "CreateSchema update", err.Error()))
+
+		return responseUpdateSchema
+	}
+
+	return responseCreateSchema
 }
 
 // LoadAllSchemas return all instances from the object

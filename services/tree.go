@@ -60,7 +60,10 @@ func DeleteTree(r *http.Request) *moduleShared.Response {
 
 // CreateTreeLevel persists the request body creating a new object in the database
 func CreateTreeLevel(r *http.Request) *moduleShared.Response {
-	treeLevel := models.TreeLevel{}
+	treeID := chi.URLParam(r, "tree_id")
+	treeLevel := models.TreeLevel{
+		TreeID: treeID,
+	}
 
 	return db.Create(r, &treeLevel, "CreateTreeLevel", shared.TableCoreTreLevels)
 }
@@ -108,7 +111,10 @@ func DeleteTreeLevel(r *http.Request) *moduleShared.Response {
 
 // CreateTreeUnit persists the request body creating a new object in the database
 func CreateTreeUnit(r *http.Request) *moduleShared.Response {
-	treeUnit := models.TreeUnit{}
+	treeID := chi.URLParam(r, "tree_id")
+	treeUnit := models.TreeUnit{
+		TreeID: treeID,
+	}
 
 	return db.Create(r, &treeUnit, "CreateTreeUnit", shared.TableCoreTreUnits)
 }

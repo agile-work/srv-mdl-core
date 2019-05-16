@@ -17,7 +17,10 @@ import (
 
 // CreateView persists the request body creating a new object in the database
 func CreateView(r *http.Request) *moduleShared.Response {
-	view := models.View{}
+	schemaID := chi.URLParam(r, "schema_id")
+	view := models.View{
+		SchemaID: schemaID,
+	}
 
 	return db.Create(r, &view, "CreateView", shared.TableCoreSchViews)
 }

@@ -15,7 +15,10 @@ import (
 
 // CreateField persists the request body creating a new object in the database
 func CreateField(r *http.Request) *moduleShared.Response {
-	field := models.Field{}
+	schemaID := chi.URLParam(r, "schema_id")
+	field := models.Field{
+		SchemaID: schemaID,
+	}
 
 	return db.Create(r, &field, "CreateField", shared.TableCoreSchFields)
 }

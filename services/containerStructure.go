@@ -15,7 +15,16 @@ import (
 
 // CreateContainerStructure persists the request body creating a new object in the database
 func CreateContainerStructure(r *http.Request) *moduleShared.Response {
-	containerStructure := models.ContainerStructure{}
+	schemaID := chi.URLParam(r, "schema_id")
+	pageID := chi.URLParam(r, "page_id")
+	containerID := chi.URLParam(r, "container_id")
+	containerType := chi.URLParam(r, "type")
+	containerStructure := models.ContainerStructure{
+		SchemaID:      schemaID,
+		PageID:        pageID,
+		ContainerID:   containerID,
+		ContainerType: containerType,
+	}
 
 	return db.Create(r, &containerStructure, "CreateContainerStructure", shared.TableCoreSchPagCntStructures)
 }

@@ -60,7 +60,10 @@ func DeleteLookup(r *http.Request) *moduleShared.Response {
 
 // CreateLookupOption persists the request body creating a new object in the database
 func CreateLookupOption(r *http.Request) *moduleShared.Response {
-	lookupOption := models.LookupOption{}
+	lookupID := chi.URLParam(r, "lookup_id")
+	lookupOption := models.LookupOption{
+		LookupID: lookupID,
+	}
 
 	return db.Create(r, &lookupOption, "CreateLookupOption", shared.TableCoreLkpOptions)
 }

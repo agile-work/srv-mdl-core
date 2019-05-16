@@ -129,7 +129,10 @@ func RemoveUserFromGroup(r *http.Request) *moduleShared.Response {
 
 // InsertPermission persists the request body creating a new object in the database
 func InsertPermission(r *http.Request) *moduleShared.Response {
-	permission := models.Permission{}
+	groupID := chi.URLParam(r, "group_id")
+	permission := models.Permission{
+		GroupID: groupID,
+	}
 
 	return db.Create(r, &permission, "InsertPermission", shared.TableCoreGrpPermissions)
 }

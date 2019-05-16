@@ -15,7 +15,10 @@ import (
 
 // CreatePage persists the request body creating a new object in the database
 func CreatePage(r *http.Request) *moduleShared.Response {
-	page := models.Page{}
+	schemaID := chi.URLParam(r, "schema_id")
+	page := models.Page{
+		SchemaID: schemaID,
+	}
 
 	return db.Create(r, &page, "CreatePage", shared.TableCoreSchPages)
 }

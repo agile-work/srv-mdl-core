@@ -15,7 +15,14 @@ import (
 
 // CreateTab persists the request body creating a new object in the database
 func CreateTab(r *http.Request) *moduleShared.Response {
-	tab := models.Tab{}
+	schemaID := chi.URLParam(r, "schema_id")
+	pageID := chi.URLParam(r, "page_id")
+	sectionID := chi.URLParam(r, "section_id")
+	tab := models.Tab{
+		SchemaID:  schemaID,
+		PageID:    pageID,
+		SectionID: sectionID,
+	}
 
 	return db.Create(r, &tab, "CreateTab", shared.TableCoreSchPagSecTabs)
 }

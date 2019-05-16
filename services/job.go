@@ -62,7 +62,10 @@ func DeleteJob(r *http.Request) *moduleShared.Response {
 
 // CreateJobTask persists the request body creating a new object in the database
 func CreateJobTask(r *http.Request) *moduleShared.Response {
-	jobTask := models.JobTask{}
+	jobTaskID := chi.URLParam(r, "job_id")
+	jobTask := models.JobTask{
+		JobID: jobTaskID,
+	}
 
 	return db.Create(r, &jobTask, "CreateJobTask", shared.TableCoreJobTasks)
 }
