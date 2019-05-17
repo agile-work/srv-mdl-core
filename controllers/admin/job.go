@@ -119,3 +119,11 @@ func RemoveFollowerFromJob(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
+
+// PostJobInstance sends the request to service deleting a schema
+func PostJobInstance(w http.ResponseWriter, r *http.Request) {
+	response := services.CreateJobInstance(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}

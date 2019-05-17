@@ -92,7 +92,7 @@ func InsertUserInGroup(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorInsertingRecord, "InsertUserInGroup", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "InsertUserInGroup", err.Error()))
 
 		return response
 	}
@@ -119,7 +119,7 @@ func RemoveUserFromGroup(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorDeletingData, "RemoveUserFromGroup", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorDeletingData, "RemoveUserFromGroup", err.Error()))
 
 		return response
 	}

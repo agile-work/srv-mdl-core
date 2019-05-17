@@ -8,8 +8,8 @@ import (
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/go-chi/chi"
 
-	"github.com/agile-work/srv-mdl-core/models"
 	moduleShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models"
 	shared "github.com/agile-work/srv-shared"
 )
 
@@ -62,8 +62,8 @@ func DeleteUser(r *http.Request) *moduleShared.Response {
 func LoadAllUsersByGroup(r *http.Request) *moduleShared.Response {
 	viewGroupUsers := []models.ViewGroupUser{}
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.group_id", models.ViewCoreGroupUsers)
+	groupIDColumn := fmt.Sprintf("%s.group_id", shared.ViewCoreGroupUsers)
 	condition := builder.Equal(groupIDColumn, groupID)
 
-	return db.Load(r, &viewGroupUsers, "LoadAllUsersByGroup", models.ViewCoreGroupUsers, condition)
+	return db.Load(r, &viewGroupUsers, "LoadAllUsersByGroup", shared.ViewCoreGroupUsers, condition)
 }

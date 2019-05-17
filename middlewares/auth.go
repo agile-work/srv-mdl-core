@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/agile-work/srv-mdl-core/models"
+	"github.com/agile-work/srv-mdl-shared/models"
 	"github.com/dgrijalva/jwt-go"
 )
 

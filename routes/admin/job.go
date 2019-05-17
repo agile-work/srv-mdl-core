@@ -25,6 +25,7 @@ func JobRoutes() *chi.Mux {
 		r.Post("/{job_id}/followers/{follower_id}/type/{follower_type}", controller.InsertFollowerInJob)
 		r.Get("/{job_id}/followers", controller.LoadAllFollowersByJob)
 		r.Delete("/{job_id}/followers/{follower_id}", controller.RemoveFollowerFromJob)
+		r.Post("/{job_id}/instance", controller.PostJobInstance)
 	})
 
 	return r

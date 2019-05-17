@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,8 +11,8 @@ import (
 	sql "github.com/agile-work/srv-shared/sql-builder/db"
 	"github.com/go-chi/chi"
 
-	"github.com/agile-work/srv-mdl-core/models"
 	moduleShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models"
 	shared "github.com/agile-work/srv-shared"
 )
 
@@ -114,9 +115,9 @@ func DeleteJobTask(r *http.Request) *moduleShared.Response {
 // LoadAllJobFollowersAvaible return all instances from the object
 func LoadAllJobFollowersAvaible(r *http.Request) *moduleShared.Response {
 	viewFollowersAvailable := []models.ViewFollowerAvailable{}
-	activeColumn := fmt.Sprintf("%s.active", models.ViewCoreUsersAndGroups)
+	activeColumn := fmt.Sprintf("%s.active", shared.ViewCoreUsersAndGroups)
 	languageCode := r.Header.Get("Content-Language")
-	languageCodeColumn := fmt.Sprintf("%s.language_code", models.ViewCoreUsersAndGroups)
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreUsersAndGroups)
 	condition := builder.And(
 		builder.Equal(activeColumn, true),
 		builder.Or(
@@ -125,7 +126,7 @@ func LoadAllJobFollowersAvaible(r *http.Request) *moduleShared.Response {
 		),
 	)
 
-	return db.Load(r, &viewFollowersAvailable, "LoadAllJobFollowersAvaible", models.ViewCoreUsersAndGroups, condition)
+	return db.Load(r, &viewFollowersAvailable, "LoadAllJobFollowersAvaible", shared.ViewCoreUsersAndGroups, condition)
 }
 
 // InsertFollowerInJob persists the request creating a new object in the database
@@ -163,7 +164,7 @@ func InsertFollowerInJob(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorInsertingRecord, "InsertFollowerInJob", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "InsertFollowerInJob", err.Error()))
 
 		return response
 	}
@@ -175,10 +176,10 @@ func InsertFollowerInJob(r *http.Request) *moduleShared.Response {
 func LoadAllFollowersByJob(r *http.Request) *moduleShared.Response {
 	jobFollowers := []models.JobFollowers{}
 	jobID := chi.URLParam(r, "job_id")
-	jobIDColumn := fmt.Sprintf("%s.job_id", models.ViewCoreJobFollowers)
+	jobIDColumn := fmt.Sprintf("%s.job_id", shared.ViewCoreJobFollowers)
 	languageCode := r.Header.Get("Content-Language")
-	languageCodeColumn := fmt.Sprintf("%s.language_code", models.ViewCoreJobFollowers)
-	followerTypeColumn := fmt.Sprintf("%s.follower_type", models.ViewCoreJobFollowers)
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreJobFollowers)
+	followerTypeColumn := fmt.Sprintf("%s.follower_type", shared.ViewCoreJobFollowers)
 	condition := builder.And(
 		builder.Equal(jobIDColumn, jobID),
 		builder.Or(
@@ -190,7 +191,7 @@ func LoadAllFollowersByJob(r *http.Request) *moduleShared.Response {
 		),
 	)
 
-	return db.Load(r, &jobFollowers, "LoadAllFollowersByJob", models.ViewCoreJobFollowers, condition)
+	return db.Load(r, &jobFollowers, "LoadAllFollowersByJob", shared.ViewCoreJobFollowers, condition)
 }
 
 // RemoveFollowerFromJob deletes object from the database
@@ -212,7 +213,49 @@ func RemoveFollowerFromJob(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorDeletingData, "RemoveFollowerFromJob", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorDeletingData, "RemoveFollowerFromJob", err.Error()))
+
+		return response
+	}
+
+	return response
+}
+
+// CreateJobInstance persists the request body creating a new object in the database
+func CreateJobInstance(r *http.Request) *moduleShared.Response {
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
+
+	jobID := chi.URLParam(r, "job_id")
+	jobTable := shared.TableCoreJobs
+	jobIDColumn := fmt.Sprintf("%s.id", jobTable)
+	condition := builder.Equal(jobIDColumn, jobID)
+	job := models.Job{}
+
+	err := sql.LoadStruct(jobTable, &job, condition)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "CreateJobInstance load job", err.Error()))
+
+		return response
+	}
+
+	params := map[string]interface{}{}
+	err = json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "CreateJobInstance unmarshal body", err.Error()))
+
+		return response
+	}
+
+	userID := r.Header.Get("userID")
+
+	_, err = moduleShared.CreateJobInstance(userID, job.Code, params)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorJobExecution, "CreateJobInstance", err.Error()))
 
 		return response
 	}

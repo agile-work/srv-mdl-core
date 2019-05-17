@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/agile-work/srv-mdl-core/models"
 	moduleShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models"
 	shared "github.com/agile-work/srv-shared"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -26,7 +26,7 @@ func Login(r *http.Request) *moduleShared.Response {
 	err := json.Unmarshal(body, &jsonMap)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorParsingRequest, "Login unmarshal body", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "Login unmarshal body", err.Error()))
 		return response
 	}
 
@@ -35,7 +35,7 @@ func Login(r *http.Request) *moduleShared.Response {
 	if !emailOk || !passwordOk {
 		err = errors.New("Invalid credentials body")
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorParsingRequest, "Login parsing body", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "Login parsing body", err.Error()))
 		return response
 	}
 
@@ -44,7 +44,7 @@ func Login(r *http.Request) *moduleShared.Response {
 	err = db.LoadStruct(shared.TableCoreUsers, &user, builder.Equal(emailColumn, jsonMap["email"]))
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorLoadingData, "Login load user", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "Login load user", err.Error()))
 
 		return response
 	}
@@ -52,14 +52,14 @@ func Login(r *http.Request) *moduleShared.Response {
 	if user.ID == "" {
 		err = errors.New("Invalid user email")
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorLogin, "Login validation", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLogin, "Login validation", err.Error()))
 		return response
 	}
 
 	if user.Password != jsonMap["password"].(string) {
 		err = errors.New("Invalid user password")
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorLogin, "Login validation", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLogin, "Login validation", err.Error()))
 		return response
 	}
 

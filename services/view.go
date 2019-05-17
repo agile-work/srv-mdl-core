@@ -98,7 +98,7 @@ func InsertPageInView(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorInsertingRecord, "InsertPageInView", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "InsertPageInView", err.Error()))
 
 		return response
 	}
@@ -147,7 +147,7 @@ func LoadAllPagesByView(r *http.Request) *moduleShared.Response {
 	err := sql.QueryStruct(statemant, &page)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorLoadingData, "LoadAllPagesByView", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "LoadAllPagesByView", err.Error()))
 
 		return response
 	}
@@ -176,7 +176,7 @@ func RemovePageFromView(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorDeletingData, "RemovePageFromView", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorDeletingData, "RemovePageFromView", err.Error()))
 
 		return response
 	}

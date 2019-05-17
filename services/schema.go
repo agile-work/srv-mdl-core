@@ -17,34 +17,38 @@ import (
 
 // CreateSchema persists the request body creating a new object in the database
 func CreateSchema(r *http.Request) *moduleShared.Response {
-	schema := models.Schema{}
-	responseCreateSchema := db.Create(r, &schema, "CreateSchema", shared.TableCoreSchemas)
+	schema := models.Schema{
+		Status: shared.JobStatusProcessing,
+	}
+	response := db.Create(r, &schema, "CreateSchema", shared.TableCoreSchemas)
 
 	params := map[string]interface{}{
 		"schema_id":   schema.ID,
-		"schema_name": schema.Name,
+		"schema_code": schema.Code,
 	}
 
-	id, responseJob := moduleShared.ExecJob(schema.CreatedBy, moduleShared.JobSystemCreateSchema, params)
-	if responseJob != nil {
-		return responseJob
+	id, err := moduleShared.CreateJobInstance(schema.CreatedBy, shared.JobSystemCreateSchema, params)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorJobExecution, "CreateSchema job execution", err.Error()))
+
+		return response
 	}
 
 	schema.JobID = id
-	schema.Status = "done"
 	schemaIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchemas)
 	condition := builder.Equal(schemaIDColumn, schema.ID)
 
-	err := sql.UpdateStruct(shared.TableCoreSchemas, &schema, condition, "status")
+	err = sql.UpdateStruct(shared.TableCoreSchemas, &schema, condition, "job_id")
 	if err != nil {
-		responseUpdateSchema := &moduleShared.Response{}
-		responseUpdateSchema.Code = http.StatusInternalServerError
-		responseUpdateSchema.Errors = append(responseUpdateSchema.Errors, moduleShared.NewResponseError(moduleShared.ErrorInsertingRecord, "CreateSchema update", err.Error()))
+		response := &moduleShared.Response{}
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "CreateSchema update job id", err.Error()))
 
-		return responseUpdateSchema
+		return response
 	}
 
-	return responseCreateSchema
+	return response
 }
 
 // LoadAllSchemas return all instances from the object
@@ -117,7 +121,7 @@ func InsertModuleInSchema(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorInsertingRecord, "InsertModuleSchema", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "InsertModuleSchema", err.Error()))
 
 		return response
 	}
@@ -165,7 +169,7 @@ func LoadAllModulesBySchema(r *http.Request) *moduleShared.Response {
 	err := sql.QueryStruct(statemant, &modules)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorLoadingData, "LoadAllModulesBySchema", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "LoadAllModulesBySchema", err.Error()))
 
 		return response
 	}
@@ -194,7 +198,7 @@ func RemoveModuleFromSchema(r *http.Request) *moduleShared.Response {
 	err := sql.Exec(statemant)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(moduleShared.ErrorDeletingData, "RemoveModuleFromSchema", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorDeletingData, "RemoveModuleFromSchema", err.Error()))
 
 		return response
 	}
