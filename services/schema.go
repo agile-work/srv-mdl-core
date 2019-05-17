@@ -18,7 +18,7 @@ import (
 // CreateSchema persists the request body creating a new object in the database
 func CreateSchema(r *http.Request) *moduleShared.Response {
 	schema := models.Schema{
-		Status: shared.JobStatusProcessing,
+		Status: shared.StatusProcessing,
 	}
 	response := db.Create(r, &schema, "CreateSchema", shared.TableCoreSchemas)
 
