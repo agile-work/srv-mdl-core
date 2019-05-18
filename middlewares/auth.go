@@ -22,7 +22,7 @@ func Authorization(next http.Handler) http.Handler {
 				r.Header.Add("userID", claims.User.ID)
 				r.Header.Add("Content-Language", claims.User.LanguageCode)
 			} else {
-				fmt.Println(err)
+				fmt.Println(err.Error())
 				http.Error(w, http.StatusText(401), http.StatusUnauthorized)
 				return
 			}

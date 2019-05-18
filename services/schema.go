@@ -18,7 +18,7 @@ import (
 // CreateSchema persists the request body creating a new object in the database
 func CreateSchema(r *http.Request) *moduleShared.Response {
 	schema := models.Schema{
-		Status: shared.StatusProcessing,
+		Status: shared.JobStatusProcessing,
 	}
 	response := db.Create(r, &schema, "CreateSchema", shared.TableCoreSchemas)
 
@@ -131,52 +131,17 @@ func InsertModuleInSchema(r *http.Request) *moduleShared.Response {
 
 // LoadAllModulesBySchema return all instances from the object
 func LoadAllModulesBySchema(r *http.Request) *moduleShared.Response {
-	response := &moduleShared.Response{
-		Code: http.StatusOK,
-	}
-
 	modules := []models.Schema{}
 	schemaID := chi.URLParam(r, "schema_id")
-	tblTranslationName := fmt.Sprintf("%s AS %s_name", shared.TableCoreTranslations, shared.TableCoreTranslations)
-	tblTranslationDescription := fmt.Sprintf("%s AS %s_description", shared.TableCoreTranslations, shared.TableCoreTranslations)
+	schemaIDColumn := fmt.Sprintf("%s.schema_id", shared.ViewCoreSchModules)
 	languageCode := r.Header.Get("Content-Language")
-
-	statemant := builder.Select(
-		"core_schemas.id",
-		"core_schemas.code",
-		"core_translations_name.value AS name",
-		"core_translations_description.value AS description",
-		"core_schemas.module",
-		"core_schemas.active",
-		"core_schemas.created_by",
-		"core_schemas.created_at",
-		"core_schemas.updated_by",
-		"core_schemas.updated_at",
-	).From(shared.TableCoreSchemas).Join(
-		tblTranslationName, "core_translations_name.structure_id = core_schemas.id and core_translations_name.structure_field = 'name'",
-	).Join(
-		tblTranslationDescription, "core_translations_description.structure_id = core_schemas.id and core_translations_description.structure_field = 'description'",
-	).Join(
-		shared.TableCoreSchemasModels, "core_schemas_modules.module_id = core_schemas.id",
-	).Where(
-		builder.And(
-			builder.Equal("core_schemas_modules.schema_id", schemaID),
-			builder.Equal("core_translations_name.language_code", languageCode),
-			builder.Equal("core_translations_description.language_code", languageCode),
-		),
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreSchModules)
+	condition := builder.And(
+		builder.Equal(schemaIDColumn, schemaID),
+		builder.Equal(languageCodeColumn, languageCode),
 	)
 
-	err := sql.QueryStruct(statemant, &modules)
-	if err != nil {
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "LoadAllModulesBySchema", err.Error()))
-
-		return response
-	}
-
-	response.Data = modules
-
-	return response
+	return db.Load(r, &modules, "LoadAllModulesBySchema", shared.ViewCoreSchModules, condition)
 }
 
 // RemoveModuleFromSchema deletes object from the database
