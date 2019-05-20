@@ -18,7 +18,7 @@ import (
 // CreateSchema persists the request body creating a new object in the database
 func CreateSchema(r *http.Request) *moduleShared.Response {
 	schema := models.Schema{
-		Status: shared.JobStatusProcessing,
+		Status: shared.SchemaStatusProcessing,
 	}
 	response := db.Create(r, &schema, "CreateSchema", shared.TableCoreSchemas)
 
@@ -87,6 +87,42 @@ func DeleteSchema(r *http.Request) *moduleShared.Response {
 	condition := builder.Equal(schemaIDColumn, schemaID)
 
 	return db.Remove(r, "DeleteSchema", shared.TableCoreSchemas, condition)
+}
+
+// CallDeleteSchema deletes object from the database
+func CallDeleteSchema(r *http.Request) *moduleShared.Response {
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
+	schema := models.Schema{
+		Status: shared.SchemaStatusDeleting,
+		Active: false,
+	}
+	schemaID := chi.URLParam(r, "schema_id")
+	schemaIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchemas)
+	condition := builder.Equal(schemaIDColumn, schemaID)
+
+	err := sql.UpdateStruct(shared.TableCoreSchemas, &schema, condition, "status", "active")
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "CallDeleteSchema update status", err.Error()))
+
+		return response
+	}
+
+	params := map[string]interface{}{
+		"schema_id": schemaID,
+	}
+
+	_, err = moduleShared.CreateJobInstance(schema.UpdatedBy, shared.JobSystemDeleteSchema, params)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorJobExecution, "DeleteSchema job execution", err.Error()))
+
+		return response
+	}
+
+	return response
 }
 
 // InsertModuleInSchema persists the request creating a new object in the database

@@ -48,6 +48,14 @@ func DeleteSchema(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
+// CallDeleteSchema sends the request to service deleting a schema
+func CallDeleteSchema(w http.ResponseWriter, r *http.Request) {
+	response := services.CallDeleteSchema(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
 // PostSchemaModule sends the request to service creating an association between group and user
 func PostSchemaModule(w http.ResponseWriter, r *http.Request) {
 	response := services.InsertModuleInSchema(r)

@@ -48,6 +48,14 @@ func DeleteJob(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
+// GetAllJobInstances return all schema instances from the service
+func GetAllJobInstances(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadAllJobInstances(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
 // PostJobTask sends the request to service creating a new schema
 func PostJobTask(w http.ResponseWriter, r *http.Request) {
 	response := services.CreateJobTask(r)
@@ -83,6 +91,14 @@ func UpdateJobTask(w http.ResponseWriter, r *http.Request) {
 // DeleteJobTask sends the request to service deleting a schema
 func DeleteJobTask(w http.ResponseWriter, r *http.Request) {
 	response := services.DeleteJobTask(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// GetAllJobTaskInstances return all schema instances from the service
+func GetAllJobTaskInstances(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadAllJobTaskInstances(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)

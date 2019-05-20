@@ -61,6 +61,16 @@ func DeleteJob(r *http.Request) *moduleShared.Response {
 	return db.Remove(r, "DeleteJob", shared.TableCoreJobs, condition)
 }
 
+// LoadAllJobInstances return all instances from the object
+func LoadAllJobInstances(r *http.Request) *moduleShared.Response {
+	viewJobInstances := []models.ViewJobInstance{}
+	languageCode := r.Header.Get("Content-Language")
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreJobInstances)
+	condition := builder.Equal(languageCodeColumn, languageCode)
+
+	return db.Load(r, &viewJobInstances, "LoadAllJobInstances", shared.ViewCoreJobInstances, condition)
+}
+
 // CreateJobTask persists the request body creating a new object in the database
 func CreateJobTask(r *http.Request) *moduleShared.Response {
 	jobTaskID := chi.URLParam(r, "job_id")
@@ -110,6 +120,21 @@ func DeleteJobTask(r *http.Request) *moduleShared.Response {
 	condition := builder.Equal(jobTaskIDColumn, jobTaskID)
 
 	return db.Remove(r, "DeleteJobTask", shared.TableCoreJobTasks, condition)
+}
+
+// LoadAllJobTaskInstances return all instances from the object
+func LoadAllJobTaskInstances(r *http.Request) *moduleShared.Response {
+	viewJobTaskInstances := []models.ViewJobTaskInstance{}
+	jobInstanceID := chi.URLParam(r, "job_instance_id")
+	jobInstanceIDColumn := fmt.Sprintf("%s.job_instance_id", shared.ViewCoreJobTaskInstances)
+	languageCode := r.Header.Get("Content-Language")
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreJobTaskInstances)
+	condition := builder.And(
+		builder.Equal(jobInstanceIDColumn, jobInstanceID),
+		builder.Equal(languageCodeColumn, languageCode),
+	)
+
+	return db.Load(r, &viewJobTaskInstances, "LoadAllJobTaskInstances", shared.ViewCoreJobTaskInstances, condition)
 }
 
 // LoadAllJobFollowersAvaible return all instances from the object

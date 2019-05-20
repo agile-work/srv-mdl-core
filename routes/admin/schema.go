@@ -16,6 +16,7 @@ func SchemaRoutes() *chi.Mux {
 		r.Get("/{schema_id}", controller.GetSchema)
 		r.Patch("/{schema_id}", controller.UpdateSchema)
 		r.Delete("/{schema_id}", controller.DeleteSchema)
+		r.Delete("/{schema_id}/start", controller.CallDeleteSchema)
 		r.Get("/{schema_id}/modules", controller.GetAllModulesBySchema)
 		r.Post("/{schema_id}/fields", controller.PostField)
 		r.Get("/{schema_id}/fields", controller.GetAllFields)
