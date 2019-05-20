@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/agile-work/srv-mdl-core/routes/admin"
 	"github.com/agile-work/srv-mdl-core/routes/auth"
+	"github.com/agile-work/srv-mdl-core/routes/instance"
 	"github.com/go-chi/chi"
 )
 
@@ -10,17 +11,11 @@ import (
 func Setup() *chi.Mux {
 	router := chi.NewRouter()
 
-	router.Route("/core/admin", func(r chi.Router) {
-		r.Mount("/configs", admin.ConfigRoutes())
-		r.Mount("/users", admin.UserRoutes())
-		r.Mount("/trees", admin.TreeRoutes())
-		r.Mount("/schemas", admin.SchemaRoutes())
-		r.Mount("/widgets", admin.WidgetRoutes())
-		r.Mount("/lookups", admin.LookupRoutes())
-		r.Mount("/groups", admin.GroupRoutes())
-		r.Mount("/currencies", admin.CurrencyRoutes())
-		r.Mount("/jobs", admin.JobRoutes())
-		r.Mount("/auth", auth.Routes())
+	router.Route("/core", func(r chi.Router) {
+		r.Mount("/admin", admin.Routes())
+		//TODO: Ajustar o endpoint para remover o /admin da parte de autenticacao. Ajustar no client-admin-web
+		r.Mount("/admin/auth", auth.Routes())
+		r.Mount("/instance", instance.Routes())
 	})
 
 	return router
