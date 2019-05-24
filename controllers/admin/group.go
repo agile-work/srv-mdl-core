@@ -72,14 +72,6 @@ func PostGroupPermission(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
-// GetAllPermissionsByGroup return all permission instances by group from the service
-func GetAllPermissionsByGroup(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllPermissionsByGroup(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
 // DeleteGroupPermission sends the request to service deleting a permission from a group
 func DeleteGroupPermission(w http.ResponseWriter, r *http.Request) {
 	response := services.RemovePermission(r)

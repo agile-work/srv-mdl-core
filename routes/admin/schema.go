@@ -23,6 +23,8 @@ func SchemaRoutes() *chi.Mux {
 		r.Get("/{schema_id}/fields/{field_id}", controller.GetField)
 		r.Patch("/{schema_id}/fields/{field_id}", controller.UpdateField)
 		r.Delete("/{schema_id}/fields/{field_id}", controller.DeleteField)
+		r.Post("/{schema_id}/fields/{field_id}/group/{group_id}", controller.PostFieldGroup)
+		r.Delete("/{schema_id}/fields/{field_id}/group/{group_id}", controller.DeleteFieldGroup)
 		r.Post("/{schema_id}/fields/{field_id}/validations", controller.PostFieldValidation)
 		r.Get("/{schema_id}/fields/{field_id}/validations", controller.GetAllFieldValidations)
 		r.Get("/{schema_id}/fields/{field_id}/validations/{field_validation_id}", controller.GetFieldValidation)

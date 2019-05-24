@@ -16,11 +16,12 @@ func GroupRoutes() *chi.Mux {
 		r.Get("/{group_id}", controller.GetGroup)
 		r.Patch("/{group_id}", controller.UpdateGroup)
 		r.Delete("/{group_id}", controller.DeleteGroup)
-		r.Post("/{group_id}/users/{user_id}", controller.AddUserInGroup)
+		// Users
 		r.Get("/{group_id}/users", controller.GetAllUsersByGroup)
+		r.Post("/{group_id}/users/{user_id}", controller.AddUserInGroup)
 		r.Delete("/{group_id}/users/{user_id}", controller.DeleteGroupUser)
+		// Permissions
 		r.Post("/{group_id}/permissions", controller.PostGroupPermission)
-		r.Get("/{group_id}/permissions", controller.GetAllPermissionsByGroup)
 		r.Delete("/{group_id}/permissions/{permission_id}", controller.DeleteGroupPermission)
 	})
 

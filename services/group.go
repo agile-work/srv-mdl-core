@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/agile-work/srv-mdl-shared/db"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -19,84 +18,62 @@ import (
 func CreateGroup(r *http.Request) *moduleShared.Response {
 	group := models.Group{}
 
-	return db.Create(r, &group, "CreateGroup", shared.TableCoreGroupPermissions)
+	return db.Create(r, &group, "CreateGroup", shared.TableCoreGroups)
 }
 
 // LoadAllGroups return all instances from the object
 func LoadAllGroups(r *http.Request) *moduleShared.Response {
 	groups := []models.Group{}
 
-	return db.Load(r, &groups, "LoadAllGroups", shared.TableCoreGroupPermissions, nil)
+	return db.Load(r, &groups, "LoadAllGroups", shared.TableCoreGroups, nil)
 }
 
 // LoadGroup return only one object from the database
 func LoadGroup(r *http.Request) *moduleShared.Response {
 	group := models.Group{}
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroupPermissions)
+	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
 	condition := builder.Equal(groupIDColumn, groupID)
 
-	return db.Load(r, &group, "LoadGroup", shared.TableCoreGroupPermissions, condition)
+	return db.Load(r, &group, "LoadGroup", shared.TableCoreGroups, condition)
 }
 
 // UpdateGroup updates object data in the database
 func UpdateGroup(r *http.Request) *moduleShared.Response {
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroupPermissions)
+	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
 	condition := builder.Equal(groupIDColumn, groupID)
 	group := models.Group{
 		ID: groupID,
 	}
 
-	return db.Update(r, &group, "UpdateGroup", shared.TableCoreGroupPermissions, condition)
+	return db.Update(r, &group, "UpdateGroup", shared.TableCoreGroups, condition)
 }
 
 // DeleteGroup deletes object from the database
 func DeleteGroup(r *http.Request) *moduleShared.Response {
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroupPermissions)
+	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
 	condition := builder.Equal(groupIDColumn, groupID)
 
-	return db.Remove(r, "DeleteGroup", shared.TableCoreGroupPermissions, condition)
+	return db.Remove(r, "DeleteGroup", shared.TableCoreGroups, condition)
 }
 
 // InsertUserInGroup persists the request creating a new object in the database
 func InsertUserInGroup(r *http.Request) *moduleShared.Response {
-	response := &moduleShared.Response{
-		Code: http.StatusOK,
+	groupID := chi.URLParam(r, "group_id")
+	userID := chi.URLParam(r, "user_id")
+	user := models.GroupUser{
+		ID: userID,
 	}
 
-	permissionGroupID := chi.URLParam(r, "group_id")
-	permissionUserID := chi.URLParam(r, "user_id")
-
-	userID := r.Header.Get("userID")
-	now := time.Now()
-
-	statemant := builder.Insert(
-		shared.TableCoreGroupPermissionsUsers,
-		"group_id",
-		"user_id",
-		"created_by",
-		"created_at",
-		"updated_by",
-		"updated_at",
-	).Values(
-		permissionGroupID,
-		permissionUserID,
-		userID,
-		now,
-		userID,
-		now,
-	)
-
-	err := sql.Exec(statemant)
-	if err != nil {
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "InsertUserInGroup", err.Error()))
-
+	response := db.GetResponse(r, &user, "InsertUserInGroup")
+	if response.Code != http.StatusOK {
 		return response
 	}
 
+	idColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
+	sql.InsertStructToJSON("users", shared.TableCoreGroups, &user, builder.Equal(idColumn, groupID))
 	return response
 }
 
@@ -105,21 +82,13 @@ func RemoveUserFromGroup(r *http.Request) *moduleShared.Response {
 	response := &moduleShared.Response{
 		Code: http.StatusOK,
 	}
-
 	groupID := chi.URLParam(r, "group_id")
 	userID := chi.URLParam(r, "user_id")
 
-	statemant := builder.Delete(shared.TableCoreGroupPermissionsUsers).Where(
-		builder.And(
-			builder.Equal("group_id", groupID),
-			builder.Equal("user_id", userID),
-		),
-	)
-
-	err := sql.Exec(statemant)
+	err := sql.DeleteStructFromJSON(userID, groupID, "users", shared.TableCoreGroups)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorDeletingData, "RemoveUserFromGroup", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "RemoveUserFromGroup", err.Error()))
 
 		return response
 	}
@@ -129,31 +98,38 @@ func RemoveUserFromGroup(r *http.Request) *moduleShared.Response {
 
 // InsertPermission persists the request body creating a new object in the database
 func InsertPermission(r *http.Request) *moduleShared.Response {
-	// groupID := chi.URLParam(r, "group_id")
-	permission := models.Permission{
-		// GroupID: groupID,
-	}
-
-	return db.Create(r, &permission, "InsertPermission", shared.TableCoreGrpPermissions)
-}
-
-// LoadAllPermissionsByGroup return all instances from the object
-func LoadAllPermissionsByGroup(r *http.Request) *moduleShared.Response {
-	permissions := []models.Permission{}
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.group_id", shared.TableCoreGrpPermissions)
-	condition := builder.Equal(groupIDColumn, groupID)
+	permission := models.Permission{}
 
-	return db.Load(r, &permissions, "LoadAllPermissionsByGroup", shared.TableCoreGrpPermissions, condition)
+	response := db.GetResponse(r, &permission, "InsertPermission")
+	if response.Code != http.StatusOK {
+		return response
+	}
+	permission.ID = sql.UUID()
+
+	idColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
+	sql.InsertStructToJSON("permissions", shared.TableCoreGroups, &permission, builder.Equal(idColumn, groupID))
+	response.Data = permission
+	return response
 }
 
 // RemovePermission deletes object from the database
 func RemovePermission(r *http.Request) *moduleShared.Response {
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
+	groupID := chi.URLParam(r, "group_id")
 	permissionID := chi.URLParam(r, "permission_id")
-	permissionIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGrpPermissions)
-	condition := builder.Equal(permissionIDColumn, permissionID)
 
-	return db.Remove(r, "RemovePermission", shared.TableCoreGrpPermissions, condition)
+	err := sql.DeleteStructFromJSON(permissionID, groupID, "permissions", shared.TableCoreGroups)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "RemovePermissionFromGroup", err.Error()))
+
+		return response
+	}
+
+	return response
 }
 
 // LoadAllGroupsByUser return all instances from the object

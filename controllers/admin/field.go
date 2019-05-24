@@ -48,6 +48,22 @@ func DeleteField(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
+// PostFieldGroup sends the request to service deleting a schema
+func PostFieldGroup(w http.ResponseWriter, r *http.Request) {
+	response := services.InsertGroupToField(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// DeleteFieldGroup sends the request to service deleting a schema
+func DeleteFieldGroup(w http.ResponseWriter, r *http.Request) {
+	response := services.DeleteGroupFromField(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
 // PostFieldValidation sends the request to service creating a new field
 func PostFieldValidation(w http.ResponseWriter, r *http.Request) {
 	response := services.CreateFieldValidation(r)

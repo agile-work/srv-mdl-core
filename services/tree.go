@@ -6,6 +6,7 @@ import (
 
 	"github.com/agile-work/srv-mdl-shared/db"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
+	sql "github.com/agile-work/srv-shared/sql-builder/db"
 	"github.com/go-chi/chi"
 
 	"github.com/agile-work/srv-mdl-core/models"
@@ -158,4 +159,40 @@ func DeleteTreeUnit(r *http.Request) *moduleShared.Response {
 	condition := builder.Equal(treeUnitIDColumn, treeUnitID)
 
 	return db.Remove(r, "DeleteTreeUnit", shared.TableCoreTreeUnits, condition)
+}
+
+// InsertTreeUnitPermission persists the request body creating a new object in the database
+func InsertTreeUnitPermission(r *http.Request) *moduleShared.Response {
+	treeUnitID := chi.URLParam(r, "tree_unit_id")
+	permission := models.Permission{}
+
+	response := db.GetResponse(r, &permission, "InsertPermission")
+	if response.Code != http.StatusOK {
+		return response
+	}
+	permission.ID = sql.UUID()
+
+	idColumn := fmt.Sprintf("%s.id", shared.TableCoreTreeUnits)
+	sql.InsertStructToJSON("permissions", shared.TableCoreTreeUnits, &permission, builder.Equal(idColumn, treeUnitID))
+	response.Data = permission
+	return response
+}
+
+// RemoveTreeUnitPermission deletes object from the database
+func RemoveTreeUnitPermission(r *http.Request) *moduleShared.Response {
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
+	treeUnitID := chi.URLParam(r, "tree_unit_id")
+	permissionID := chi.URLParam(r, "permission_id")
+
+	err := sql.DeleteStructFromJSON(permissionID, treeUnitID, "permissions", shared.TableCoreTreeUnits)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "RemovePermissionFromGroup", err.Error()))
+
+		return response
+	}
+
+	return response
 }

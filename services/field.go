@@ -6,6 +6,7 @@ import (
 
 	"github.com/agile-work/srv-mdl-shared/db"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
+	sql "github.com/agile-work/srv-shared/sql-builder/db"
 	"github.com/go-chi/chi"
 
 	"github.com/agile-work/srv-mdl-core/models"
@@ -110,4 +111,41 @@ func DeleteFieldValidation(r *http.Request) *moduleShared.Response {
 	condition := builder.Equal(fieldValidationIDColumn, fieldValidationID)
 
 	return db.Remove(r, "DeleteFieldValidation", shared.TableCoreSchemaFldValidations, condition)
+}
+
+// InsertGroupToField persists the request creating a new object in the database
+func InsertGroupToField(r *http.Request) *moduleShared.Response {
+	fieldID := chi.URLParam(r, "field_id")
+	groupID := chi.URLParam(r, "group_id")
+	group := models.FieldGroup{
+		ID: groupID,
+	}
+
+	response := db.GetResponse(r, &group, "InsertGroupToField")
+	if response.Code != http.StatusOK {
+		return response
+	}
+
+	idColumn := fmt.Sprintf("%s.id", shared.TableCoreSchemaFields)
+	sql.InsertStructToJSON("groups", shared.TableCoreSchemaFields, &group, builder.Equal(idColumn, fieldID))
+	return response
+}
+
+// DeleteGroupFromField deletes object from the database
+func DeleteGroupFromField(r *http.Request) *moduleShared.Response {
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
+	fieldID := chi.URLParam(r, "field_id")
+	groupID := chi.URLParam(r, "group_id")
+
+	err := sql.DeleteStructFromJSON(groupID, fieldID, "groups", shared.TableCoreSchemaFields)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "DeleteGroupFromField", err.Error()))
+
+		return response
+	}
+
+	return response
 }

@@ -127,3 +127,19 @@ func DeleteTreeUnit(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
+
+// PostTreeUnitPermission sends the request to service deleting a schema
+func PostTreeUnitPermission(w http.ResponseWriter, r *http.Request) {
+	response := services.InsertTreeUnitPermission(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// DeleteTreeUnitPermission sends the request to service deleting a schema
+func DeleteTreeUnitPermission(w http.ResponseWriter, r *http.Request) {
+	response := services.RemoveTreeUnitPermission(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
