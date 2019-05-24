@@ -13,6 +13,8 @@ type Schema struct {
 	Code          string       `json:"code" sql:"code"`
 	Name          string       `json:"name" table:"core_translations" alias:"core_translations_name" sql:"value" on:"core_translations_name.structure_id = core_schemas.id and core_translations_name.structure_field = 'name'"`
 	Description   string       `json:"description" table:"core_translations" alias:"core_translations_description" sql:"value" on:"core_translations_description.structure_id = core_schemas.id and core_translations_description.structure_field = 'description'"`
+	Parent        string       `json:"parent_id" sql:"parent_id"`
+	IsExtension   bool         `json:"is_extension" sql:"is_extension"`
 	Module        bool         `json:"module" sql:"module"`
 	Active        bool         `json:"active" sql:"active"`
 	Status        string       `json:"status" sql:"status"`

@@ -169,15 +169,15 @@ func InsertModuleInSchema(r *http.Request) *moduleShared.Response {
 func LoadAllModulesBySchema(r *http.Request) *moduleShared.Response {
 	modules := []models.Schema{}
 	schemaID := chi.URLParam(r, "schema_id")
-	schemaIDColumn := fmt.Sprintf("%s.schema_id", shared.ViewCoreSchModules)
+	schemaIDColumn := fmt.Sprintf("%s.schema_id", shared.ViewCoreSchemaModules)
 	languageCode := r.Header.Get("Content-Language")
-	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreSchModules)
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreSchemaModules)
 	condition := builder.And(
 		builder.Equal(schemaIDColumn, schemaID),
 		builder.Equal(languageCodeColumn, languageCode),
 	)
 
-	return db.Load(r, &modules, "LoadAllModulesBySchema", shared.ViewCoreSchModules, condition)
+	return db.Load(r, &modules, "LoadAllModulesBySchema", shared.ViewCoreSchemaModules, condition)
 }
 
 // RemoveModuleFromSchema deletes object from the database

@@ -1,4 +1,4 @@
-package admin
+package instance
 
 import (
 	"net/http"

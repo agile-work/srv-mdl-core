@@ -15,7 +15,7 @@ func Setup() *chi.Mux {
 		r.Mount("/admin", admin.Routes())
 		//TODO: Ajustar o endpoint para remover o /admin da parte de autenticacao. Ajustar no client-admin-web
 		r.Mount("/admin/auth", auth.Routes())
-		r.Mount("/instance", instance.Routes())
+		r.Mount("/instances", instance.Routes())
 	})
 
 	return router

@@ -65,46 +65,46 @@ func CreateCurrencyRate(r *http.Request) *moduleShared.Response {
 		FromCurrencyID: currencyID,
 	}
 
-	return db.Create(r, &currencyRate, "CreateCurrencyRate", shared.TableCoreCryRates)
+	return db.Create(r, &currencyRate, "CreateCurrencyRate", shared.TableCoreCurrencyRates)
 }
 
 // LoadAllCurrencyRates return all instances from the object
 func LoadAllCurrencyRates(r *http.Request) *moduleShared.Response {
 	currencies := []models.CurrencyRate{}
 	fromCurrencyCode := chi.URLParam(r, "currency_id")
-	fromCurrencyCodeColumn := fmt.Sprintf("%s.from_currency_id", shared.TableCoreCryRates)
+	fromCurrencyCodeColumn := fmt.Sprintf("%s.from_currency_id", shared.TableCoreCurrencyRates)
 	condition := builder.Equal(fromCurrencyCodeColumn, fromCurrencyCode)
 
-	return db.Load(r, &currencies, "LoadAllCurrencyRates", shared.TableCoreCryRates, condition)
+	return db.Load(r, &currencies, "LoadAllCurrencyRates", shared.TableCoreCurrencyRates, condition)
 }
 
 // LoadCurrencyRate return only one object from the database
 func LoadCurrencyRate(r *http.Request) *moduleShared.Response {
 	currencyRate := models.CurrencyRate{}
 	currencyRateID := chi.URLParam(r, "currency_rate_id")
-	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCryRates)
+	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencyRates)
 	condition := builder.Equal(currencyRateIDColumn, currencyRateID)
 
-	return db.Load(r, &currencyRate, "LoadCurrencyRate", shared.TableCoreCryRates, condition)
+	return db.Load(r, &currencyRate, "LoadCurrencyRate", shared.TableCoreCurrencyRates, condition)
 }
 
 // UpdateCurrencyRate updates object data in the database
 func UpdateCurrencyRate(r *http.Request) *moduleShared.Response {
 	currencyRateID := chi.URLParam(r, "currency_rate_id")
-	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCryRates)
+	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencyRates)
 	condition := builder.Equal(currencyRateIDColumn, currencyRateID)
 	currencyRate := models.CurrencyRate{
 		ID: currencyRateID,
 	}
 
-	return db.Update(r, &currencyRate, "UpdateCurrencyRate", shared.TableCoreCryRates, condition)
+	return db.Update(r, &currencyRate, "UpdateCurrencyRate", shared.TableCoreCurrencyRates, condition)
 }
 
 // DeleteCurrencyRate deletes object from the database
 func DeleteCurrencyRate(r *http.Request) *moduleShared.Response {
 	currencyRateID := chi.URLParam(r, "currency_rate_id")
-	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCryRates)
+	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencyRates)
 	condition := builder.Equal(currencyRateIDColumn, currencyRateID)
 
-	return db.Remove(r, "DeleteCurrencyRate", shared.TableCoreCryRates, condition)
+	return db.Remove(r, "DeleteCurrencyRate", shared.TableCoreCurrencyRates, condition)
 }

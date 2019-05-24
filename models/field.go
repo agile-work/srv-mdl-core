@@ -16,7 +16,7 @@ type Field struct {
 	FieldType     string       `json:"field_type" sql:"field_type"`
 	Multivalue    bool         `json:"multivalue" sql:"multivalue"`
 	LookupID      string       `json:"lookup_id" sql:"lookup_id" fk:"true"`
-	Permission    int          `json:"permission"`
+	Permissions   []Permission `json:"permissions" sql:"permissions"`
 	Active        bool         `json:"active" sql:"active"`
 	CreatedBy     string       `json:"created_by" sql:"created_by"`
 	CreatedByUser *models.User `json:"created_by_user" table:"core_users" alias:"created_by_user" on:"created_by_user.id = core_sch_fields.created_by"`

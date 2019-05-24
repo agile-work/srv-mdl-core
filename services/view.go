@@ -22,48 +22,48 @@ func CreateView(r *http.Request) *moduleShared.Response {
 		SchemaID: schemaID,
 	}
 
-	return db.Create(r, &view, "CreateView", shared.TableCoreSchViews)
+	return db.Create(r, &view, "CreateView", shared.TableCoreSchemaViews)
 }
 
 // LoadAllViews return all instances from the object
 func LoadAllViews(r *http.Request) *moduleShared.Response {
 	views := []models.View{}
 	schemaID := chi.URLParam(r, "schema_id")
-	schemaIDColumn := fmt.Sprintf("%s.schema_id", shared.TableCoreSchViews)
+	schemaIDColumn := fmt.Sprintf("%s.schema_id", shared.TableCoreSchemaViews)
 	condition := builder.Equal(schemaIDColumn, schemaID)
 
-	return db.Load(r, &views, "LoadAllViews", shared.TableCoreSchViews, condition)
+	return db.Load(r, &views, "LoadAllViews", shared.TableCoreSchemaViews, condition)
 }
 
 // LoadView return only one object from the database
 func LoadView(r *http.Request) *moduleShared.Response {
 	view := models.View{}
 	viewID := chi.URLParam(r, "view_id")
-	viewIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchViews)
+	viewIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchemaViews)
 	condition := builder.Equal(viewIDColumn, viewID)
 
-	return db.Load(r, &view, "LoadView", shared.TableCoreSchViews, condition)
+	return db.Load(r, &view, "LoadView", shared.TableCoreSchemaViews, condition)
 }
 
 // UpdateView updates object data in the database
 func UpdateView(r *http.Request) *moduleShared.Response {
 	viewID := chi.URLParam(r, "view_id")
-	viewIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchViews)
+	viewIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchemaViews)
 	condition := builder.Equal(viewIDColumn, viewID)
 	view := models.View{
 		ID: viewID,
 	}
 
-	return db.Update(r, &view, "UpdateView", shared.TableCoreSchViews, condition)
+	return db.Update(r, &view, "UpdateView", shared.TableCoreSchemaViews, condition)
 }
 
 // DeleteView deletes object from the database
 func DeleteView(r *http.Request) *moduleShared.Response {
 	viewID := chi.URLParam(r, "view_id")
-	viewIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchViews)
+	viewIDColumn := fmt.Sprintf("%s.id", shared.TableCoreSchemaViews)
 	condition := builder.Equal(viewIDColumn, viewID)
 
-	return db.Remove(r, "DeleteView", shared.TableCoreSchViews, condition)
+	return db.Remove(r, "DeleteView", shared.TableCoreSchemaViews, condition)
 }
 
 // InsertPageInView persists the request creating a new object in the database
@@ -130,7 +130,7 @@ func LoadAllPagesByView(r *http.Request) *moduleShared.Response {
 		"core_sch_pages.created_at",
 		"core_sch_pages.updated_by",
 		"core_sch_pages.updated_at",
-	).From(shared.TableCoreSchPages).Join(
+	).From(shared.TableCoreSchemaPages).Join(
 		tblTranslationName, "core_translations_name.structure_id = core_sch_pages.id and core_translations_name.structure_field = 'name'",
 	).Join(
 		tblTranslationDescription, "core_translations_description.structure_id = core_sch_pages.id and core_translations_description.structure_field = 'description'",

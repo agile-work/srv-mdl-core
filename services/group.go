@@ -19,45 +19,45 @@ import (
 func CreateGroup(r *http.Request) *moduleShared.Response {
 	group := models.Group{}
 
-	return db.Create(r, &group, "CreateGroup", shared.TableCoreGroups)
+	return db.Create(r, &group, "CreateGroup", shared.TableCoreGroupPermissions)
 }
 
 // LoadAllGroups return all instances from the object
 func LoadAllGroups(r *http.Request) *moduleShared.Response {
 	groups := []models.Group{}
 
-	return db.Load(r, &groups, "LoadAllGroups", shared.TableCoreGroups, nil)
+	return db.Load(r, &groups, "LoadAllGroups", shared.TableCoreGroupPermissions, nil)
 }
 
 // LoadGroup return only one object from the database
 func LoadGroup(r *http.Request) *moduleShared.Response {
 	group := models.Group{}
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
+	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroupPermissions)
 	condition := builder.Equal(groupIDColumn, groupID)
 
-	return db.Load(r, &group, "LoadGroup", shared.TableCoreGroups, condition)
+	return db.Load(r, &group, "LoadGroup", shared.TableCoreGroupPermissions, condition)
 }
 
 // UpdateGroup updates object data in the database
 func UpdateGroup(r *http.Request) *moduleShared.Response {
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
+	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroupPermissions)
 	condition := builder.Equal(groupIDColumn, groupID)
 	group := models.Group{
 		ID: groupID,
 	}
 
-	return db.Update(r, &group, "UpdateGroup", shared.TableCoreGroups, condition)
+	return db.Update(r, &group, "UpdateGroup", shared.TableCoreGroupPermissions, condition)
 }
 
 // DeleteGroup deletes object from the database
 func DeleteGroup(r *http.Request) *moduleShared.Response {
 	groupID := chi.URLParam(r, "group_id")
-	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
+	groupIDColumn := fmt.Sprintf("%s.id", shared.TableCoreGroupPermissions)
 	condition := builder.Equal(groupIDColumn, groupID)
 
-	return db.Remove(r, "DeleteGroup", shared.TableCoreGroups, condition)
+	return db.Remove(r, "DeleteGroup", shared.TableCoreGroupPermissions, condition)
 }
 
 // InsertUserInGroup persists the request creating a new object in the database
@@ -73,7 +73,7 @@ func InsertUserInGroup(r *http.Request) *moduleShared.Response {
 	now := time.Now()
 
 	statemant := builder.Insert(
-		shared.TableCoreGroupsUsers,
+		shared.TableCoreGroupPermissionsUsers,
 		"group_id",
 		"user_id",
 		"created_by",
@@ -109,7 +109,7 @@ func RemoveUserFromGroup(r *http.Request) *moduleShared.Response {
 	groupID := chi.URLParam(r, "group_id")
 	userID := chi.URLParam(r, "user_id")
 
-	statemant := builder.Delete(shared.TableCoreGroupsUsers).Where(
+	statemant := builder.Delete(shared.TableCoreGroupPermissionsUsers).Where(
 		builder.And(
 			builder.Equal("group_id", groupID),
 			builder.Equal("user_id", userID),
@@ -129,9 +129,9 @@ func RemoveUserFromGroup(r *http.Request) *moduleShared.Response {
 
 // InsertPermission persists the request body creating a new object in the database
 func InsertPermission(r *http.Request) *moduleShared.Response {
-	groupID := chi.URLParam(r, "group_id")
+	// groupID := chi.URLParam(r, "group_id")
 	permission := models.Permission{
-		GroupID: groupID,
+		// GroupID: groupID,
 	}
 
 	return db.Create(r, &permission, "InsertPermission", shared.TableCoreGrpPermissions)
@@ -160,13 +160,13 @@ func RemovePermission(r *http.Request) *moduleShared.Response {
 func LoadAllGroupsByUser(r *http.Request) *moduleShared.Response {
 	viewUserGroups := []models.ViewUserGroup{}
 	userID := chi.URLParam(r, "user_id")
-	userIDColumn := fmt.Sprintf("%s.user_id", models.ViewCoreUserGroups)
+	userIDColumn := fmt.Sprintf("%s.user_id", shared.ViewCoreUserGroups)
 	languageCode := r.Header.Get("Content-Language")
-	languageCodeColumn := fmt.Sprintf("%s.language_code", models.ViewCoreUserGroups)
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreUserGroups)
 	condition := builder.And(
 		builder.Equal(userIDColumn, userID),
 		builder.Equal(languageCodeColumn, languageCode),
 	)
 
-	return db.Load(r, &viewUserGroups, "LoadAllGroupsByUser", models.ViewCoreUserGroups, condition)
+	return db.Load(r, &viewUserGroups, "LoadAllGroupsByUser", shared.ViewCoreUserGroups, condition)
 }
