@@ -52,14 +52,14 @@ func LoadAllResources(r *http.Request) *moduleShared.Response {
 	rows, err := sql.Query(statement)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadResource", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadAllResources", err.Error()))
 		return response
 	}
 
 	results, err := sql.MapScan(rows)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadResource Parsing query rows to map", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadAllResources Parsing query rows to map", err.Error()))
 		return response
 	}
 
@@ -119,7 +119,9 @@ func LoadResource(r *http.Request) *moduleShared.Response {
 		return response
 	}
 
-	response.Data = results[0]
+	if len(results) > 0 {
+		response.Data = results[0]
+	}
 	return response
 }
 

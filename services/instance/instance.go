@@ -32,38 +32,52 @@ func LoadAllInstances(r *http.Request) *moduleShared.Response {
 		Code: http.StatusOK,
 	}
 
-	schemaCode := chi.URLParam(r, "schema_code")
 	userID := r.Header.Get("userID")
-	languageCode := r.Header.Get("Content-Language")
+	schemaCode := chi.URLParam(r, "schema_code")
 
-	// TODO: check user instances permission
-	columns, err := getUserSchemaColumns(schemaCode, userID, languageCode)
+	securityFields, err := db.GetUserAvailableFields(userID, schemaCode, shared.SecurityStructureField)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading user fields permission", err.Error()))
 		return response
 	}
+	fields := []string{}
+	treeJoin := make(map[string]string)
+	columns := []string{}
 
 	instanceTable := fmt.Sprintf("%s%s", instancesTablePrefix, schemaCode)
-	//TODO: Paging and order by
-	statement := builder.Select("id").JSON("data", columns...).From(instanceTable)
+
+	for _, f := range securityFields {
+		if f.StructureType == shared.FieldLookupTree {
+			columns = append(columns, f.StructureCode)
+			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.StructureCode)
+			treeJoin[table] = fmt.Sprintf("on %s->>'field' = '%s'", f.StructureCode, f.StructureCode)
+		} else {
+			fields = append(fields, f.StructureCode)
+		}
+	}
+
+	columns = append(columns, instanceTable+".id")
+	statement := builder.Select(columns...).JSON("data", fields...).From(instanceTable)
+	for table, on := range treeJoin {
+		statement.Join(table, on)
+	}
 
 	rows, err := sql.Query(statement)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading instances", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadAllInstances", err.Error()))
 		return response
 	}
 
 	results, err := sql.MapScan(rows)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Parsing query rows to map", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadAllInstances Parsing query rows to map", err.Error()))
 		return response
 	}
 
 	response.Data = results
-
 	return response
 }
 
@@ -73,38 +87,54 @@ func LoadInstance(r *http.Request) *moduleShared.Response {
 		Code: http.StatusOK,
 	}
 
-	schemaCode := chi.URLParam(r, "schema_code")
-	instanceID := chi.URLParam(r, "instance_id")
 	userID := r.Header.Get("userID")
-	languageCode := r.Header.Get("Content-Language")
+	schemaCode := chi.URLParam(r, "schema_code")
 
-	// TODO: check user instances permission
-	columns, err := getUserSchemaColumns(schemaCode, userID, languageCode)
+	securityFields, err := db.GetUserAvailableFields(userID, schemaCode, shared.SecurityStructureField)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading user fields permission", err.Error()))
 		return response
 	}
+	fields := []string{}
+	treeJoin := make(map[string]string)
+	columns := []string{}
 
 	instanceTable := fmt.Sprintf("%s%s", instancesTablePrefix, schemaCode)
 
-	statement := builder.Select("id").JSON("data", columns...).From(instanceTable).Where(builder.Equal("id", instanceID))
+	for _, f := range securityFields {
+		if f.StructureType == shared.FieldLookupTree {
+			columns = append(columns, f.StructureCode)
+			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.StructureCode)
+			treeJoin[table] = fmt.Sprintf("on %s->>'field' = '%s'", f.StructureCode, f.StructureCode)
+		} else {
+			fields = append(fields, f.StructureCode)
+		}
+	}
+
+	columns = append(columns, instanceTable+".id")
+	statement := builder.Select(columns...).JSON("data", fields...).From(instanceTable)
+	for table, on := range treeJoin {
+		statement.Join(table, on)
+	}
 
 	rows, err := sql.Query(statement)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading instances", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadInstance", err.Error()))
 		return response
 	}
 
 	results, err := sql.MapScan(rows)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Parsing query rows to map", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadInstance Parsing query rows to map", err.Error()))
 		return response
 	}
 
-	response.Data = results[0]
+	if len(results) > 0 {
+		response.Data = results[0]
+	}
 	return response
 }
 
