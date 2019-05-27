@@ -3,7 +3,7 @@ package instance
 import (
 	"net/http"
 
-	"github.com/agile-work/srv-mdl-core/services"
+	services "github.com/agile-work/srv-mdl-core/services/instance"
 
 	"github.com/go-chi/render"
 )

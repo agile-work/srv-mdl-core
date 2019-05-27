@@ -1,4 +1,4 @@
-package services
+package instance
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	moduleShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/db"
-	"github.com/agile-work/srv-shared"
+	shared "github.com/agile-work/srv-shared"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	sql "github.com/agile-work/srv-shared/sql-builder/db"
 	"github.com/go-chi/chi"
