@@ -9,7 +9,7 @@ import (
 func Routes() *chi.Mux {
 	r := chi.NewRouter()
 
-	// v1/api/core/instance/schema_code
+	// v1/api/core/instance/
 	r.Route("/", func(r chi.Router) {
 		r.Post("/{schema_code}", controller.PostInstance)
 		r.Get("/{schema_code}", controller.GetAllInstances)
@@ -20,6 +20,10 @@ func Routes() *chi.Mux {
 		r.Get("/{schema_code}/{instance_id}/permissions", controller.GetAllPermissions)
 		r.Patch("/{schema_code}/{instance_id}/permissions/{permission_id}", controller.UpdatePermission)
 		r.Delete("/{schema_code}/{instance_id}/permissions/{permission_id}", controller.DeletePermission)
+		// resources
+		r.Get("/resources", controller.GetAllResources)
+		r.Get("/resources/{resource_id}", controller.GetResource)
+		r.Patch("/resources/{resource_id}", controller.UpdateResource)
 	})
 
 	return r

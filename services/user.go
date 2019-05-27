@@ -8,16 +8,45 @@ import (
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/go-chi/chi"
 
+	localModels "github.com/agile-work/srv-mdl-core/models"
 	moduleShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models"
 	shared "github.com/agile-work/srv-shared"
+	sql "github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // CreateUser persists the request body creating a new object in the database
 func CreateUser(r *http.Request) *moduleShared.Response {
-	user := models.User{}
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
 
-	return db.Create(r, &user, "CreateUser", shared.TableCoreUsers)
+	trs, err := sql.NewTransaction()
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "CreateUser initiating transaction", err.Error()))
+		return response
+	}
+
+	user := models.User{}
+	db.LoadBodyToStruct(r, &user)
+	user.ID = sql.UUID()
+	db.SetSchemaAudit(r, &user)
+	trs.Add(sql.StructInsertQuery(shared.TableCoreUsers, &user, "", true))
+
+	resource := localModels.Instance{}
+	resource.ID = sql.UUID()
+	resource.ParentID = user.ID
+	db.SetSchemaAudit(r, &resource)
+	trs.Add(sql.StructInsertQuery(shared.TableCustomResources, &resource, "", true))
+
+	err = trs.Exec()
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "CreateUser", err.Error()))
+		return response
+	}
+	return response
 }
 
 // LoadAllUsers return all instances from the object

@@ -8,6 +8,7 @@ import (
 // Instance defines the struct of this object
 type Instance struct {
 	ID        string          `json:"id" sql:"id" pk:"true"`
+	ParentID  string          `json:"parent_id" sql:"parent_id" pk:"true"`
 	Data      json.RawMessage `json:"data" sql:"data" field:"jsonb"`
 	CreatedBy string          `json:"created_by" sql:"created_by"`
 	CreatedAt time.Time       `json:"created_at" sql:"created_at"`
