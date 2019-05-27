@@ -20,25 +20,30 @@ func LoadAllResources(r *http.Request) *moduleShared.Response {
 		Code: http.StatusOK,
 	}
 	userID := r.Header.Get("userID")
-	securityFields := db.GetUserAvailableStructures(userID, "resource", shared.SecurityStructureField)
+	securityFields, err := db.GetUserAvailableFields(userID, "resources", shared.SecurityStructureField)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading user fields permission", err.Error()))
+		return response
+	}
 	fields := []string{}
 	treeJoin := make(map[string]string)
 	columns := []string{}
 
 	for _, f := range securityFields {
-		if f.StructureType == shared.FieldLookupTree {
-			columns = append(columns, f.Code)
-			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.Code)
-			treeJoin[table] = fmt.Sprintf("on %s->>'field' = '%s'", f.Code, f.Code)
+		if f.StructureClass == shared.FieldLookupTree {
+			columns = append(columns, f.StructureCode)
+			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.StructureCode)
+			treeJoin[table] = fmt.Sprintf("%s->>'field' = '%s'", f.StructureCode, f.StructureCode)
 		} else {
-			fields = append(fields, f.Code)
+			fields = append(fields, f.StructureCode)
 		}
 	}
 
 	columns = append(columns, models.GetUserSelectableFields()...)
 	columns = append(columns, shared.TableCustomResources+".id")
 
-	on := fmt.Sprintf("on %s.id = %s.parent_id", shared.TableCoreUsers, shared.TableCustomResources)
+	on := fmt.Sprintf("%s.id = %s.parent_id", shared.TableCoreUsers, shared.TableCustomResources)
 	statement := builder.Select(columns...).JSON("data", fields...).From(shared.TableCustomResources).Join(shared.TableCoreUsers, on)
 	for table, on := range treeJoin {
 		statement.Join(table, on)
@@ -70,25 +75,30 @@ func LoadResource(r *http.Request) *moduleShared.Response {
 	userID := r.Header.Get("userID")
 	resourceID := chi.URLParam(r, "resource_id")
 
-	securityFields := db.GetUserAvailableStructures(userID, "resource", shared.SecurityStructureField)
+	securityFields, err := db.GetUserAvailableFields(userID, "resources", shared.SecurityStructureField)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading user fields permission", err.Error()))
+		return response
+	}
 	fields := []string{}
 	treeJoin := make(map[string]string)
 	columns := []string{}
 
 	for _, f := range securityFields {
-		if f.StructureType == shared.FieldLookupTree {
-			columns = append(columns, f.Code)
-			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.Code)
-			treeJoin[table] = fmt.Sprintf("on %s->>'field' = '%s'", f.Code, f.Code)
+		if f.StructureClass == shared.FieldLookupTree {
+			columns = append(columns, f.StructureCode)
+			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.StructureCode)
+			treeJoin[table] = fmt.Sprintf("%s->>'field' = '%s'", f.StructureCode, f.StructureCode)
 		} else {
-			fields = append(fields, f.Code)
+			fields = append(fields, f.StructureCode)
 		}
 	}
 
 	columns = append(columns, models.GetUserSelectableFields()...)
 	columns = append(columns, shared.TableCustomResources+".id")
 
-	on := fmt.Sprintf("on %s.id = %s.parent_id", shared.TableCoreUsers, shared.TableCustomResources)
+	on := fmt.Sprintf("%s.id = %s.parent_id", shared.TableCoreUsers, shared.TableCustomResources)
 	statement := builder.Select(columns...).JSON("data", fields...).From(shared.TableCustomResources).Join(shared.TableCoreUsers, on)
 	for table, on := range treeJoin {
 		statement.Join(table, on)
