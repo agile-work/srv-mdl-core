@@ -30,13 +30,16 @@ type GroupUser struct {
 
 // Permission defines the struct of this object
 type Permission struct {
-	ID             string    `json:"id,omitempty"`
-	StructureType  string    `json:"structure_type,omitempty"`
-	StructureID    string    `json:"structure_id,omitempty"`
-	PermissionType int       `json:"permission_type,omitempty"`
+	ID             string    `json:"id,omitempty" sql:"id"`
+	ParentID       string    `json:"parent_id,omitempty" sql:"parent_id"`
+	StructureID    string    `json:"structure_id,omitempty" sql:"structure_id"`
+	StructureType  string    `json:"structure_type,omitempty" sql:"structure_type"`
+	StructureName  string    `json:"structure_name,omitempty" sql:"structure_name"`
+	PermissionType int       `json:"permission_type,omitempty" sql:"permission_type"`
 	ConditionQuery string    `json:"condition_query,omitempty"`
-	CreatedBy      string    `json:"created_by,omitempty"`
-	CreatedAt      time.Time `json:"created_at,omitempty"`
+	LanguageCode   string    `json:"language_code,omitempty" sql:"language_code"`
+	CreatedBy      string    `json:"created_by,omitempty" sql:"created_by"`
+	CreatedAt      time.Time `json:"created_at,omitempty" sql:"created_at"`
 }
 
 // ViewUserGroup defines the struct of this object

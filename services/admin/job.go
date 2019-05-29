@@ -154,7 +154,7 @@ func LoadAllJobFollowersAvaible(r *http.Request) *moduleShared.Response {
 	return db.Load(r, &viewFollowersAvailable, "LoadAllJobFollowersAvaible", shared.ViewCoreUsersAndGroups, condition)
 }
 
-// InsertFollowerInJob persists the request creating a new object in the database
+// InsertFollowerInJob persists the request body creating a new object in the database
 func InsertFollowerInJob(r *http.Request) *moduleShared.Response {
 	response := &moduleShared.Response{
 		Code: http.StatusOK,
@@ -162,34 +162,40 @@ func InsertFollowerInJob(r *http.Request) *moduleShared.Response {
 
 	jobID := chi.URLParam(r, "job_id")
 	followerID := chi.URLParam(r, "follower_id")
+	languageCode := r.Header.Get("Content-Language")
 	followerType := chi.URLParam(r, "follower_type")
-
 	userID := r.Header.Get("userID")
 	now := time.Now()
 
-	statemant := builder.Insert(
-		shared.TableCoreJobsFollowers,
-		"job_id",
-		"follower_id",
-		"follower_type",
-		"created_by",
-		"created_at",
-		"updated_by",
-		"updated_at",
-	).Values(
-		jobID,
-		followerID,
-		followerType,
-		userID,
-		now,
-		userID,
-		now,
-	)
+	follower := models.JobFollowers{
+		ID:           sql.UUID(),
+		JobID:        jobID,
+		LanguageCode: languageCode,
+		FollowerID:   followerID,
+		FollowerType: followerType,
+		CreatedBy:    userID,
+		CreatedAt:    now,
+	}
 
-	err := sql.Exec(statemant)
+	jobIDColumn := fmt.Sprintf("%s.id", shared.TableCoreJobs)
+	sql.InsertStructToJSON("followers", shared.TableCoreJobs, &follower, builder.Equal(jobIDColumn, jobID))
+	response.Data = follower
+	return response
+}
+
+// RemoveFollowerFromJob deletes object from the database
+func RemoveFollowerFromJob(r *http.Request) *moduleShared.Response {
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
+
+	jobID := chi.URLParam(r, "job_id")
+	followerID := chi.URLParam(r, "follower_id")
+
+	err := sql.DeleteStructFromJSON(followerID, jobID, "followers", shared.TableCoreJobs)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "InsertFollowerInJob", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "RemoveFollowerFromJob", err.Error()))
 
 		return response
 	}
@@ -217,33 +223,6 @@ func LoadAllFollowersByJob(r *http.Request) *moduleShared.Response {
 	)
 
 	return db.Load(r, &jobFollowers, "LoadAllFollowersByJob", shared.ViewCoreJobFollowers, condition)
-}
-
-// RemoveFollowerFromJob deletes object from the database
-func RemoveFollowerFromJob(r *http.Request) *moduleShared.Response {
-	response := &moduleShared.Response{
-		Code: http.StatusOK,
-	}
-
-	jobID := chi.URLParam(r, "job_id")
-	followerID := chi.URLParam(r, "follower_id")
-
-	statemant := builder.Delete(shared.TableCoreJobsFollowers).Where(
-		builder.And(
-			builder.Equal("job_id", jobID),
-			builder.Equal("follower_id", followerID),
-		),
-	)
-
-	err := sql.Exec(statemant)
-	if err != nil {
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorDeletingData, "RemoveFollowerFromJob", err.Error()))
-
-		return response
-	}
-
-	return response
 }
 
 // CreateJobInstance persists the request body creating a new object in the database

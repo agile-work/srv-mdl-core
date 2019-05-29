@@ -96,3 +96,18 @@ func LoadAllUsersByGroup(r *http.Request) *moduleShared.Response {
 
 	return db.Load(r, &viewGroupUsers, "LoadAllUsersByGroup", shared.ViewCoreGroupUsers, condition)
 }
+
+// LoadAllPermissionsByGroup return all instances from the object
+func LoadAllPermissionsByGroup(r *http.Request) *moduleShared.Response {
+	viewUserAllPermissions := []models.ViewUserAllPermissions{}
+	userID := chi.URLParam(r, "user_id")
+	userIDColumn := fmt.Sprintf("%s.user_id", shared.ViewCoreUserAllPermissions)
+	languageCode := r.Header.Get("Content-Language")
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreUserAllPermissions)
+	condition := builder.And(
+		builder.Equal(userIDColumn, userID),
+		builder.Equal(languageCodeColumn, languageCode),
+	)
+
+	return db.Load(r, &viewUserAllPermissions, "LoadAllPermissionsByGroup", shared.ViewCoreUserAllPermissions, condition)
+}

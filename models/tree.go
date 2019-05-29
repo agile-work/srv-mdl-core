@@ -21,7 +21,7 @@ type Tree struct {
 type TreeLevel struct {
 	ID          string    `json:"id" sql:"id" pk:"true"`
 	Code        string    `json:"code" sql:"code"`
-	TreeCode    string    `json:"tree_code" sql:"tree_code" fk:"true"`
+	TreeID      string    `json:"tree_id" sql:"tree_id" fk:"true"`
 	Name        string    `json:"name" table:"core_translations" alias:"core_translations_name" sql:"value" on:"core_translations_name.structure_id = core_tree_levels.id and core_translations_name.structure_field = 'name'"`
 	Description string    `json:"description" table:"core_translations" alias:"core_translations_description" sql:"value" on:"core_translations_description.structure_id = core_tree_levels.id and core_translations_description.structure_field = 'description'"`
 	CreatedBy   string    `json:"created_by" sql:"created_by"`
@@ -34,7 +34,7 @@ type TreeLevel struct {
 type TreeUnit struct {
 	ID              string       `json:"id" sql:"id" pk:"true"`
 	Code            string       `json:"code" sql:"code"`
-	TreeCode        string       `json:"tree_code" sql:"tree_code" fk:"true"`
+	TreeID          string       `json:"tree_id" sql:"tree_id" fk:"true"`
 	Path            string       `json:"path" sql:"path"`
 	Name            string       `json:"name" table:"core_translations" alias:"core_translations_name" sql:"value" on:"core_translations_name.structure_id = core_tree_units.id and core_translations_name.structure_field = 'name'"`
 	Description     string       `json:"description" table:"core_translations" alias:"core_translations_description" sql:"value" on:"core_translations_description.structure_id = core_tree_units.id and core_translations_description.structure_field = 'description'"`

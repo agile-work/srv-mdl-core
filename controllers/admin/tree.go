@@ -128,6 +128,14 @@ func DeleteTreeUnit(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
+// GetAllTreeUnitPermissions return all schema instances from the service
+func GetAllTreeUnitPermissions(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadAllTreeUnitPermissions(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
 // PostTreeUnitPermission sends the request to service deleting a schema
 func PostTreeUnitPermission(w http.ResponseWriter, r *http.Request) {
 	response := services.InsertTreeUnitPermission(r)

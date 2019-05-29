@@ -64,9 +64,17 @@ func DeleteGroupUser(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
+// GetAllGroupPermissions return all schema instances from the service
+func GetAllGroupPermissions(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadAllGroupPermissions(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
 // PostGroupPermission sends the request to service creating a permission in a group
 func PostGroupPermission(w http.ResponseWriter, r *http.Request) {
-	response := services.InsertPermission(r)
+	response := services.InsertGroupPermission(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
@@ -74,7 +82,7 @@ func PostGroupPermission(w http.ResponseWriter, r *http.Request) {
 
 // DeleteGroupPermission sends the request to service deleting a permission from a group
 func DeleteGroupPermission(w http.ResponseWriter, r *http.Request) {
-	response := services.RemovePermission(r)
+	response := services.RemoveGroupPermission(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)

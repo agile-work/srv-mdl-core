@@ -96,12 +96,28 @@ func RemoveUserFromGroup(r *http.Request) *moduleShared.Response {
 	return response
 }
 
-// InsertPermission persists the request body creating a new object in the database
-func InsertPermission(r *http.Request) *moduleShared.Response {
+// LoadAllGroupPermissions return all instances from the object
+func LoadAllGroupPermissions(r *http.Request) *moduleShared.Response {
+	permissions := []models.Permission{}
+
+	groupID := chi.URLParam(r, "group_id")
+	groupIDColumn := fmt.Sprintf("%s.parent_id", shared.ViewCoreStructurePermissions)
+	languageCode := r.Header.Get("Content-Language")
+	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreStructurePermissions)
+	condition := builder.And(
+		builder.Equal(groupIDColumn, groupID),
+		builder.Equal(languageCodeColumn, languageCode),
+	)
+
+	return db.Load(r, &permissions, "LoadAllGroupPermissions", shared.ViewCoreStructurePermissions, condition)
+}
+
+// InsertGroupPermission persists the request body creating a new object in the database
+func InsertGroupPermission(r *http.Request) *moduleShared.Response {
 	groupID := chi.URLParam(r, "group_id")
 	permission := models.Permission{}
 
-	response := db.GetResponse(r, &permission, "InsertPermission")
+	response := db.GetResponse(r, &permission, "InsertGroupPermission")
 	if response.Code != http.StatusOK {
 		return response
 	}
@@ -113,8 +129,8 @@ func InsertPermission(r *http.Request) *moduleShared.Response {
 	return response
 }
 
-// RemovePermission deletes object from the database
-func RemovePermission(r *http.Request) *moduleShared.Response {
+// RemoveGroupPermission deletes object from the database
+func RemoveGroupPermission(r *http.Request) *moduleShared.Response {
 	response := &moduleShared.Response{
 		Code: http.StatusOK,
 	}
@@ -124,7 +140,7 @@ func RemovePermission(r *http.Request) *moduleShared.Response {
 	err := sql.DeleteStructFromJSON(permissionID, groupID, "permissions", shared.TableCoreGroups)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "RemovePermissionFromGroup", err.Error()))
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "RemoveGroupPermissionFromGroup", err.Error()))
 
 		return response
 	}

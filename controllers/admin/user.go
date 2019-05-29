@@ -71,3 +71,11 @@ func GetAllUsersByGroup(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
+
+// GetAllPermissionsByUser return all user instances by group from the service
+func GetAllPermissionsByUser(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadAllPermissionsByGroup(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
