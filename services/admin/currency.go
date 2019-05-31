@@ -1,11 +1,14 @@
 package admin
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/agile-work/srv-mdl-shared/db"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
+	sql "github.com/agile-work/srv-shared/sql-builder/db"
 	"github.com/go-chi/chi"
 
 	"github.com/agile-work/srv-mdl-core/models"
@@ -30,20 +33,20 @@ func LoadAllCurrencies(r *http.Request) *moduleShared.Response {
 // LoadCurrency return only one object from the database
 func LoadCurrency(r *http.Request) *moduleShared.Response {
 	currency := models.Currency{}
-	currencyID := chi.URLParam(r, "currency_id")
-	currencyIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencies)
-	condition := builder.Equal(currencyIDColumn, currencyID)
+	currencyCode := chi.URLParam(r, "currency_code")
+	currencyCodeColumn := fmt.Sprintf("%s.code", shared.TableCoreCurrencies)
+	condition := builder.Equal(currencyCodeColumn, currencyCode)
 
 	return db.Load(r, &currency, "LoadCurrency", shared.TableCoreCurrencies, condition)
 }
 
 // UpdateCurrency updates object data in the database
 func UpdateCurrency(r *http.Request) *moduleShared.Response {
-	currencyID := chi.URLParam(r, "currency_id")
-	currencyIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencies)
-	condition := builder.Equal(currencyIDColumn, currencyID)
+	currencyCode := chi.URLParam(r, "currency_code")
+	currencyCodeColumn := fmt.Sprintf("%s.code", shared.TableCoreCurrencies)
+	condition := builder.Equal(currencyCodeColumn, currencyCode)
 	currency := models.Currency{
-		ID: currencyID,
+		ID: currencyCode,
 	}
 
 	return db.Update(r, &currency, "UpdateCurrency", shared.TableCoreCurrencies, condition)
@@ -51,60 +54,79 @@ func UpdateCurrency(r *http.Request) *moduleShared.Response {
 
 // DeleteCurrency deletes object from the database
 func DeleteCurrency(r *http.Request) *moduleShared.Response {
-	currencyID := chi.URLParam(r, "currency_id")
-	currencyIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencies)
-	condition := builder.Equal(currencyIDColumn, currencyID)
+	currencyCode := chi.URLParam(r, "currency_code")
+	currencyCodeColumn := fmt.Sprintf("%s.code", shared.TableCoreCurrencies)
+	condition := builder.Equal(currencyCodeColumn, currencyCode)
 
 	return db.Remove(r, "DeleteCurrency", shared.TableCoreCurrencies, condition)
 }
 
-// CreateCurrencyRate persists the request body creating a new object in the database
-func CreateCurrencyRate(r *http.Request) *moduleShared.Response {
-	currencyID := chi.URLParam(r, "currency_id")
-	currencyRate := models.CurrencyRate{
-		FromCurrencyID: currencyID,
+// AddCurrencyRate persists the request body creating a new object in the database
+func AddCurrencyRate(r *http.Request) *moduleShared.Response {
+	currencyCode := chi.URLParam(r, "currency_code")
+	toCode := chi.URLParam(r, "to_currency_code")
+
+	rate := models.CurrencyRate{}
+
+	response := db.GetResponse(r, &rate, "AddCurrencyRate")
+	if response.Code != http.StatusOK {
+		return response
 	}
 
-	return db.Create(r, &currencyRate, "CreateCurrencyRate", shared.TableCoreCurrencyRates)
-}
+	cols := db.GetBodyColumns(r)
+	if !contains(cols, "start_at", "end_at") {
+		trs, err := sql.NewTransaction()
+		if err != nil {
+			response.Code = http.StatusInternalServerError
+			response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "AddCurrencyRate new transaction", err.Error()))
 
-// LoadAllCurrencyRates return all instances from the object
-func LoadAllCurrencyRates(r *http.Request) *moduleShared.Response {
-	currencies := []models.CurrencyRate{}
-	fromCurrencyCode := chi.URLParam(r, "currency_id")
-	fromCurrencyCodeColumn := fmt.Sprintf("%s.from_currency_id", shared.TableCoreCurrencyRates)
-	condition := builder.Equal(fromCurrencyCodeColumn, fromCurrencyCode)
+			return response
+		}
+		endAt := time.Now().Format(time.RFC3339)
+		querySQL := fmt.Sprintf(`update %s 
+		set rates = jsonb_set(
+			rates, 
+			('{%s,-1}') ::text[], 
+			rates::jsonb#>('{%s,-1}')::text[] || '{"end_at": "%s"}'
+			,true
+		) where code = '%s'`, shared.TableCoreCurrencies, toCode, toCode, endAt, currencyCode)
+		trs.Add(builder.Raw(querySQL))
 
-	return db.Load(r, &currencies, "LoadAllCurrencyRates", shared.TableCoreCurrencyRates, condition)
-}
+		t := time.Now()
+		rate.Start = &t
+		rateBytes, _ := json.Marshal(rate)
+		querySQL = fmt.Sprintf(`update %s set rates = jsonb_insert(
+		rates, '{%s,-1}', '%s', true) 
+		where code = '%s'`, shared.TableCoreCurrencies, toCode, string(rateBytes), currencyCode)
+		trs.Add(builder.Raw(querySQL))
 
-// LoadCurrencyRate return only one object from the database
-func LoadCurrencyRate(r *http.Request) *moduleShared.Response {
-	currencyRate := models.CurrencyRate{}
-	currencyRateID := chi.URLParam(r, "currency_rate_id")
-	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencyRates)
-	condition := builder.Equal(currencyRateIDColumn, currencyRateID)
+		err = trs.Exec()
+		if err != nil {
+			response.Code = http.StatusInternalServerError
+			response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "AddCurrencyRate", err.Error()))
 
-	return db.Load(r, &currencyRate, "LoadCurrencyRate", shared.TableCoreCurrencyRates, condition)
-}
-
-// UpdateCurrencyRate updates object data in the database
-func UpdateCurrencyRate(r *http.Request) *moduleShared.Response {
-	currencyRateID := chi.URLParam(r, "currency_rate_id")
-	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencyRates)
-	condition := builder.Equal(currencyRateIDColumn, currencyRateID)
-	currencyRate := models.CurrencyRate{
-		ID: currencyRateID,
+			return response
+		}
+	} else {
+		// TODO: insert with start_at and end_at adjusting all rates
+		response.Code = http.StatusNotImplemented
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "AddCurrencyRate", ""))
+		return response
 	}
-
-	return db.Update(r, &currencyRate, "UpdateCurrencyRate", shared.TableCoreCurrencyRates, condition)
+	return response
 }
 
-// DeleteCurrencyRate deletes object from the database
-func DeleteCurrencyRate(r *http.Request) *moduleShared.Response {
-	currencyRateID := chi.URLParam(r, "currency_rate_id")
-	currencyRateIDColumn := fmt.Sprintf("%s.id", shared.TableCoreCurrencyRates)
-	condition := builder.Equal(currencyRateIDColumn, currencyRateID)
-
-	return db.Remove(r, "DeleteCurrencyRate", shared.TableCoreCurrencyRates, condition)
+func contains(slice []string, match ...string) bool {
+	result := false
+	for _, m := range match {
+		found := false
+		for _, s := range slice {
+			if s == m {
+				found = true
+				break
+			}
+		}
+		result = found
+	}
+	return result
 }

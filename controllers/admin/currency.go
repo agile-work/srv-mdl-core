@@ -48,41 +48,9 @@ func DeleteCurrency(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
-// PostCurrencyRate sends the request to service creating a new schema
-func PostCurrencyRate(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateCurrencyRate(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// GetAllCurrencyRates return all schema instances from the service
-func GetAllCurrencyRates(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllCurrencyRates(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// GetCurrencyRate return only one schema from the service
-func GetCurrencyRate(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadCurrencyRate(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// UpdateCurrencyRate sends the request to service updating a schema
-func UpdateCurrencyRate(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateCurrencyRate(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// DeleteCurrencyRate sends the request to service deleting a schema
-func DeleteCurrencyRate(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteCurrencyRate(r)
+// AddCurrencyRate sends the request to service creating a new schema
+func AddCurrencyRate(w http.ResponseWriter, r *http.Request) {
+	response := services.AddCurrencyRate(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)

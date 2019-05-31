@@ -13,14 +13,10 @@ func CurrencyRoutes() *chi.Mux {
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", controller.PostCurrency)
 		r.Get("/", controller.GetAllCurrencies)
-		r.Get("/{currency_id}", controller.GetCurrency)
-		r.Patch("/{currency_id}", controller.UpdateCurrency)
-		r.Delete("/{currency_id}", controller.DeleteCurrency)
-		r.Post("/{currency_id}/rates", controller.PostCurrencyRate)
-		r.Get("/{currency_id}/rates", controller.GetAllCurrencyRates)
-		r.Get("/{currency_id}/rates/{currency_rate_id}", controller.GetCurrencyRate)
-		r.Patch("/{currency_id}/rates/{currency_rate_id}", controller.UpdateCurrencyRate)
-		r.Delete("/{currency_id}/rates/{currency_rate_id}", controller.DeleteCurrencyRate)
+		r.Get("/{currency_code}", controller.GetCurrency)
+		r.Patch("/{currency_code}", controller.UpdateCurrency)
+		r.Delete("/{currency_code}", controller.DeleteCurrency)
+		r.Post("/{currency_code}/rates/{to_currency_code}", controller.AddCurrencyRate)
 	})
 
 	return r
