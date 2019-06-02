@@ -25,6 +25,7 @@ func CreateCurrency(r *http.Request) *moduleShared.Response {
 
 // LoadAllCurrencies return all instances from the object
 func LoadAllCurrencies(r *http.Request) *moduleShared.Response {
+	// TODO: Make a way of limit the columns for the get all. Passing fields to LoadStruct.
 	currencies := []models.Currency{}
 
 	return db.Load(r, &currencies, "LoadAllCurrencies", shared.TableCoreCurrencies, nil)
@@ -32,6 +33,7 @@ func LoadAllCurrencies(r *http.Request) *moduleShared.Response {
 
 // LoadCurrency return only one object from the database
 func LoadCurrency(r *http.Request) *moduleShared.Response {
+	// TODO: Limit the total of rates to +/- 100 records if has no filter
 	currency := models.Currency{}
 	currencyCode := chi.URLParam(r, "currency_code")
 	currencyCodeColumn := fmt.Sprintf("%s.code", shared.TableCoreCurrencies)
