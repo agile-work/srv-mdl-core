@@ -10,8 +10,8 @@ type Group struct {
 	Code                    string       `json:"code" sql:"code"`
 	Name                    string       `json:"name" table:"core_translations" alias:"core_translations_name" sql:"value" on:"core_translations_name.structure_id = core_groups.id and core_translations_name.structure_field = 'name'"`
 	Description             string       `json:"description" table:"core_translations" alias:"core_translations_description" sql:"value" on:"core_translations_description.structure_id = core_groups.id and core_translations_description.structure_field = 'description'"`
-	TreeUnitID              string       `json:"tree_unit_id" sql:"tree_unit_id"`
-	TreeUnitPermissionScope string       `json:"tree_unit_permission_scope" sql:"tree_unit_permission_scope"`
+	TreeUnitID              *string      `json:"tree_unit_id" sql:"tree_unit_id"`
+	TreeUnitPermissionScope *string      `json:"tree_unit_permission_scope" sql:"tree_unit_permission_scope"`
 	Permissions             []Permission `json:"permissions" sql:"permissions" field:"jsonb"`
 	Users                   []GroupUser  `json:"users" sql:"users" field:"jsonb"`
 	Active                  bool         `json:"active" sql:"active"`

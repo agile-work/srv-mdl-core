@@ -20,7 +20,7 @@ func LoadAllResources(r *http.Request) *moduleShared.Response {
 		Code: http.StatusOK,
 	}
 	userID := r.Header.Get("userID")
-	securityFields, err := db.GetUserAvailableFields(userID, "resources", shared.SecurityStructureField)
+	securityFields, err := db.GetUserAvailableFields(userID, "resources", shared.SecurityStructureField, "")
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading user fields permission", err.Error()))
@@ -75,7 +75,7 @@ func LoadResource(r *http.Request) *moduleShared.Response {
 	userID := r.Header.Get("userID")
 	resourceID := chi.URLParam(r, "resource_id")
 
-	securityFields, err := db.GetUserAvailableFields(userID, "resources", shared.SecurityStructureField)
+	securityFields, err := db.GetUserAvailableFields(userID, "resources", shared.SecurityStructureField, resourceID)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "Loading user fields permission", err.Error()))
