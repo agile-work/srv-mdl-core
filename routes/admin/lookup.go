@@ -9,18 +9,13 @@ import (
 func LookupRoutes() *chi.Mux {
 	r := chi.NewRouter()
 
-	// v1/api/admin/lookups
+	// v1/api/core/admin/lookups
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", controller.PostLookup)
 		r.Get("/", controller.GetAllLookups)
-		r.Get("/{lookup_id}", controller.GetLookup)
-		r.Patch("/{lookup_id}", controller.UpdateLookup)
-		r.Delete("/{lookup_id}", controller.DeleteLookup)
-		r.Post("/{lookup_id}/options", controller.PostLookupOption)
-		r.Get("/{lookup_id}/options", controller.GetAllLookupOptions)
-		r.Get("/{lookup_id}/options/{lookup_option_id}", controller.GetLookupOption)
-		r.Patch("/{lookup_id}/options/{lookup_option_id}", controller.UpdateLookupOption)
-		r.Delete("/{lookup_id}/options/{lookup_option_id}", controller.DeleteLookupOption)
+		r.Get("/{lookup_code}", controller.GetLookup)
+		r.Patch("/{lookup_code}", controller.UpdateLookup)
+		r.Delete("/{lookup_code}", controller.DeleteLookup)
 	})
 
 	return r

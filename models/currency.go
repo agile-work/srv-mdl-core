@@ -9,7 +9,7 @@ import (
 // Currency defines the struct of this object
 type Currency struct {
 	ID        string                    `json:"id" sql:"id" pk:"true"`
-	Code      string                    `json:"code" sql:"code" pk:"true"`
+	Code      string                    `json:"code" sql:"code" updatable:"false"`
 	Name      sharedModels.Translation  `json:"name" sql:"name" field:"jsonb"`
 	Rates     map[string][]CurrencyRate `json:"rates" sql:"rates" field:"jsonb"`
 	Active    bool                      `json:"active" sql:"active"`
