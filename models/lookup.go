@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -18,10 +19,10 @@ import (
 type Lookup struct {
 	ID          string                   `json:"id" sql:"id" pk:"true"`
 	Code        string                   `json:"code" sql:"code" updatable:"false"`
-	Type        string                   `json:"type" sql:"type"`
+	Type        string                   `json:"type" sql:"type" updatable:"false"`
 	Name        sharedModels.Translation `json:"name" sql:"name" field:"jsonb"`
 	Description sharedModels.Translation `json:"description" sql:"description" field:"jsonb"`
-	Definitions json.RawMessage          `json:"definitions" sql:"definitions" field:"jsonb"`
+	Definitions json.RawMessage          `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"`
 	Active      bool                     `json:"active" sql:"active"`
 	CreatedBy   string                   `json:"created_by" sql:"created_by"`
 	CreatedAt   time.Time                `json:"created_at" sql:"created_at"`
@@ -29,11 +30,50 @@ type Lookup struct {
 	UpdatedAt   time.Time                `json:"updated_at" sql:"updated_at"`
 }
 
+// ParseDefinition parse to a specific definition type for the lookup
+func (l *Lookup) ParseDefinition() error {
+	var def interface{}
+	invalidType := false
+
+	switch l.Type {
+	case shared.LookupDynamic:
+		def = &LookupDynamicDefinition{}
+		err := json.Unmarshal(l.Definitions, def)
+		if err != nil {
+			return err
+		}
+	case shared.LookupStatic:
+		def = &LookupStaticDefinition{}
+		err := json.Unmarshal(l.Definitions, def)
+		if err != nil {
+			return err
+		}
+	default:
+		invalidType = true
+	}
+
+	if invalidType {
+		return errors.New("invalid lookup type")
+	}
+
+	jsonBytes, err := json.Marshal(def)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(jsonBytes, &l.Definitions)
+}
+
 // ProcessDefinitions parse generic definition to a specific type processing necessary fields
-func (l *Lookup) ProcessDefinitions(languageCode string) error {
+func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 	switch l.Type {
 	case shared.LookupDynamic:
 		dynamicDef := &LookupDynamicDefinition{}
+		if method == http.MethodPost {
+			dynamicDef.CreatedBy = l.CreatedBy
+			dynamicDef.CreatedAt = l.CreatedAt
+		}
+		dynamicDef.UpdatedBy = l.UpdatedBy
+		dynamicDef.UpdatedAt = l.UpdatedAt
 		err := json.Unmarshal(l.Definitions, dynamicDef)
 		if err != nil {
 			return err
@@ -48,12 +88,26 @@ func (l *Lookup) ProcessDefinitions(languageCode string) error {
 		}
 		return json.Unmarshal(jsonBytes, &l.Definitions)
 	case shared.LookupStatic:
+		sharedModels.TranslationFieldsRequestLanguageCode = languageCode
 		staticDef := LookupStaticDefinition{}
 		err := json.Unmarshal(l.Definitions, &staticDef)
 		if err != nil {
 			return err
 		}
-		return nil
+		for i := range staticDef.Options {
+			if method == http.MethodPost {
+				staticDef.Options[i].CreatedBy = l.CreatedBy
+				staticDef.Options[i].CreatedAt = l.CreatedAt
+			}
+			staticDef.Options[i].UpdatedBy = l.UpdatedBy
+			staticDef.Options[i].UpdatedAt = l.UpdatedAt
+		}
+		sharedModels.TranslationFieldsRequestLanguageCode = "all"
+		jsonBytes, err := json.Marshal(staticDef)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(jsonBytes, &l.Definitions)
 	}
 	return errors.New("invalid lookup type")
 }
@@ -85,8 +139,8 @@ func (d *LookupDynamicDefinition) parseQuery(languageCode string) error {
 		if paramCodeExists(d.Params, param.Code) {
 			return errors.New("invalid query param, duplicated code " + param.Code)
 		}
-		param.Label = make(map[string]string)
-		param.Label[languageCode] = param.Code
+		param.Label.Language = make(map[string]string)
+		param.Label.Language[languageCode] = param.Code
 		param.DataType = fields[2]
 		if len(fields) > 3 {
 			param.Pattern = fields[3]
@@ -132,8 +186,8 @@ func (d *LookupDynamicDefinition) parseQuery(languageCode string) error {
 	}
 	for i, f := range d.Fields {
 		d.Fields[i].DataType = parseSQLType(f.DataType)
-		d.Fields[i].Label = make(map[string]string)
-		d.Fields[i].Label[languageCode] = f.Code
+		d.Fields[i].Label.Language = make(map[string]string)
+		d.Fields[i].Label.Language[languageCode] = f.Code
 	}
 
 	trs.Commit()
@@ -142,26 +196,28 @@ func (d *LookupDynamicDefinition) parseQuery(languageCode string) error {
 
 // LookupParam defines the struct of a dynamic filter param
 type LookupParam struct {
-	Code     string            `json:"code"`
-	DataType string            `json:"data_type"`
-	Label    map[string]string `json:"label"`
-	Pattern  string            `json:"pattern,omitempty"`
+	Code     string                   `json:"code"`
+	DataType string                   `json:"data_type"`
+	Label    sharedModels.Translation `json:"label"`
+	Pattern  string                   `json:"pattern,omitempty"`
 }
 
 // LookupStaticDefinition define specific fields for the lookup definition
 type LookupStaticDefinition struct {
-	Options []LookupOption `json:"options"`
+	Options   []LookupOption `json:"options,omitempty"`
+	OrderType string         `json:"order_type,omitempty"`
+	Order     []string       `json:"order,omitempty"`
 }
 
 // LookupOption defines the struct of a static option
 type LookupOption struct {
-	Code      string            `json:"code"`
-	Label     map[string]string `json:"label"`
-	Active    bool              `json:"active"`
-	CreatedBy string            `json:"created_by"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedBy string            `json:"updated_by"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	Code      string                   `json:"code"`
+	Label     sharedModels.Translation `json:"label,omitempty"`
+	Active    bool                     `json:"active"`
+	CreatedBy string                   `json:"created_by"`
+	CreatedAt time.Time                `json:"created_at"`
+	UpdatedBy string                   `json:"updated_by"`
+	UpdatedAt time.Time                `json:"updated_at"`
 }
 
 func parseSQLType(sqlType string) string {

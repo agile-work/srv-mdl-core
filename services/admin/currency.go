@@ -76,7 +76,7 @@ func AddCurrencyRate(r *http.Request) *moduleShared.Response {
 	}
 
 	cols := db.GetBodyColumns(r)
-	if !contains(cols, "start_at", "end_at") {
+	if !shared.Contains(cols, "start_at", "end_at") {
 		trs, err := sql.NewTransaction()
 		if err != nil {
 			response.Code = http.StatusInternalServerError
@@ -116,19 +116,4 @@ func AddCurrencyRate(r *http.Request) *moduleShared.Response {
 		return response
 	}
 	return response
-}
-
-func contains(slice []string, match ...string) bool {
-	result := false
-	for _, m := range match {
-		found := false
-		for _, s := range slice {
-			if s == m {
-				found = true
-				break
-			}
-		}
-		result = found
-	}
-	return result
 }

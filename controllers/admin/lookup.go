@@ -47,3 +47,35 @@ func DeleteLookup(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
+
+// AddLookupOption add a new option to a lookup
+func AddLookupOption(w http.ResponseWriter, r *http.Request) {
+	response := services.AddLookupOption(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// UpdateLookupOption change lookup option data
+func UpdateLookupOption(w http.ResponseWriter, r *http.Request) {
+	response := services.UpdateLookupOption(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// DeleteLookupOption delete an option
+func DeleteLookupOption(w http.ResponseWriter, r *http.Request) {
+	response := services.DeleteLookupOption(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// UpdateLookupOrder delete an option
+func UpdateLookupOrder(w http.ResponseWriter, r *http.Request) {
+	response := services.UpdateLookupOrder(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}

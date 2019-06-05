@@ -16,6 +16,10 @@ func LookupRoutes() *chi.Mux {
 		r.Get("/{lookup_code}", controller.GetLookup)
 		r.Patch("/{lookup_code}", controller.UpdateLookup)
 		r.Delete("/{lookup_code}", controller.DeleteLookup)
+		r.Post("/{lookup_code}/options", controller.AddLookupOption)
+		r.Patch("/{lookup_code}/options/{option_code}", controller.UpdateLookupOption)
+		r.Delete("/{lookup_code}/options/{option_code}", controller.DeleteLookupOption)
+		r.Post("/{lookup_code}/order", controller.UpdateLookupOrder)
 	})
 
 	return r
