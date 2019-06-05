@@ -79,3 +79,27 @@ func UpdateLookupOrder(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
+
+// UpdateLookupQuery change dynamic lookup query
+func UpdateLookupQuery(w http.ResponseWriter, r *http.Request) {
+	response := services.UpdateLookupQuery(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// UpdateLookupDynamicField change dynamic lookup field
+func UpdateLookupDynamicField(w http.ResponseWriter, r *http.Request) {
+	response := services.UpdateLookupDynamicParam(r, "field")
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// UpdateLookupDynamicParam change dynamic lookup param
+func UpdateLookupDynamicParam(w http.ResponseWriter, r *http.Request) {
+	response := services.UpdateLookupDynamicParam(r, "param")
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}

@@ -78,7 +78,7 @@ func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 		if err != nil {
 			return err
 		}
-		err = dynamicDef.parseQuery(languageCode)
+		err = dynamicDef.ParseQuery(languageCode)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 // LookupDynamicDefinition define specific fields for the lookup definition
 type LookupDynamicDefinition struct {
 	Query     string        `json:"query"`
-	Fields    []LookupParam `json:"field"`
+	Fields    []LookupParam `json:"fields"`
 	Params    []LookupParam `json:"params"`
 	CreatedBy string        `json:"created_by"`
 	CreatedAt time.Time     `json:"created_at"`
@@ -123,7 +123,42 @@ type LookupDynamicDefinition struct {
 	UpdatedAt time.Time     `json:"updated_at"`
 }
 
-func (d *LookupDynamicDefinition) parseQuery(languageCode string) error {
+// GetParamIndex returns the index of the param in the slice
+func (d *LookupDynamicDefinition) GetParamIndex(param LookupParam) int {
+	for i, p := range d.Params {
+		if p.Code == param.Code {
+			return i
+		}
+	}
+	return -1
+}
+
+// ContainsField validate if dynamic definition fields contain a specific field
+func (d *LookupDynamicDefinition) ContainsField(field LookupParam) bool {
+	for _, f := range d.Fields {
+		if f.Code == field.Code && f.DataType == field.DataType {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsParam validate if dynamic definition params contain a specific param and if the pattern has changed
+func (d *LookupDynamicDefinition) ContainsParam(param LookupParam) int {
+	for _, f := range d.Params {
+		if f.Code == param.Code && f.DataType == param.DataType {
+			if f.Pattern == param.Pattern {
+				return 0
+			} else {
+				return 1
+			}
+		}
+	}
+	return -1
+}
+
+// ParseQuery validate query and get fields and params from query
+func (d *LookupDynamicDefinition) ParseQuery(languageCode string) error {
 	r := regexp.MustCompile("{{param:[^}}]*}}")
 	params := r.FindAllString(d.Query, -1)
 	params = unique(params)
@@ -200,6 +235,13 @@ type LookupParam struct {
 	DataType string                   `json:"data_type"`
 	Label    sharedModels.Translation `json:"label"`
 	Pattern  string                   `json:"pattern,omitempty"`
+	Security LookupSecurity           `json:"security,omitempty"`
+}
+
+// LookupSecurity defines the fields to set security to a field
+type LookupSecurity struct {
+	SchemaCode string `json:"schema_code"`
+	FieldCode  string `json:"field_code"`
 }
 
 // LookupStaticDefinition define specific fields for the lookup definition
