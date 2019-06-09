@@ -43,8 +43,8 @@ func LoadAllInstances(r *http.Request) *moduleShared.Response {
 		return response
 	}
 
-	user.LoadSecurityConditions(schemaCode, statement)
 	user.LoadSecurityTreeJoins(schemaCode, statement)
+	user.LoadSecurityConditions(schemaCode, statement)
 
 	rows, err := sql.Query(statement)
 	if err != nil {
