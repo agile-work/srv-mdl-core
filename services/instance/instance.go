@@ -1,12 +1,14 @@
 package instance
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
 
 	moduleShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/db"
+	moduleSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	shared "github.com/agile-work/srv-shared"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	sql "github.com/agile-work/srv-shared/sql-builder/db"
@@ -16,24 +18,51 @@ import (
 	"github.com/agile-work/srv-mdl-core/models"
 )
 
-const (
-	instancesTablePrefix string = "cst_"
-)
-
 // CreateInstance persists the request body creating a new object in the database
 func CreateInstance(r *http.Request) *moduleShared.Response {
 	instance := models.Instance{}
 	schemaCode := chi.URLParam(r, "schema_code")
 
-	return db.Create(r, &instance, "CreateInstance", fmt.Sprintf("%s%s", instancesTablePrefix, schemaCode))
+	return db.Create(r, &instance, "CreateInstance", fmt.Sprintf("%s%s", shared.InstancesTablePrefix, schemaCode))
 }
 
 // LoadAllInstances return all instances from the object
 func LoadAllInstances(r *http.Request) *moduleShared.Response {
-	userID := r.Header.Get("userID")
-	schemaCode := chi.URLParam(r, "schema_code")
+	response := &moduleShared.Response{
+		Code: http.StatusOK,
+	}
 
-	return loadInstances(userID, schemaCode, "LoadAllInstances", "")
+	schemaCode := chi.URLParam(r, "schema_code")
+	user := moduleSharedModels.User{}
+	json.Unmarshal([]byte(r.Header.Get("User")), &user)
+
+	statement, err := user.InitSecurityQuery(schemaCode)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadAllInstances loading user fields permission", err.Error()))
+		return response
+	}
+
+	user.LoadSecurityConditions(schemaCode, statement)
+	user.LoadSecurityTreeJoins(schemaCode, statement)
+
+	rows, err := sql.Query(statement)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadAllInstances loading instances", err.Error()))
+		return response
+	}
+
+	results, err := sql.MapScan(rows)
+	if err != nil {
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, "LoadAllInstances parsing query rows to map", err.Error()))
+		return response
+	}
+
+	response.Data = results
+
+	return response
 }
 
 // LoadInstance return only one object from the database
@@ -59,7 +88,7 @@ func LoadInstance(r *http.Request) *moduleShared.Response {
 func UpdateInstance(r *http.Request) *moduleShared.Response {
 	schemaCode := chi.URLParam(r, "schema_code")
 	instanceID := chi.URLParam(r, "instance_id")
-	table := fmt.Sprintf("%s%s", instancesTablePrefix, schemaCode)
+	table := fmt.Sprintf("%s%s", shared.InstancesTablePrefix, schemaCode)
 	instanceIDColumn := fmt.Sprintf("%s.id", table)
 	condition := builder.Equal(instanceIDColumn, instanceID)
 
@@ -74,7 +103,7 @@ func UpdateInstance(r *http.Request) *moduleShared.Response {
 func DeleteInstance(r *http.Request) *moduleShared.Response {
 	schemaCode := chi.URLParam(r, "schema_code")
 	instanceID := chi.URLParam(r, "instance_id")
-	table := fmt.Sprintf("%s%s", instancesTablePrefix, schemaCode)
+	table := fmt.Sprintf("%s%s", shared.InstancesTablePrefix, schemaCode)
 	instanceIDColumn := fmt.Sprintf("%s.id", table)
 	condition := builder.Equal(instanceIDColumn, instanceID)
 
@@ -128,8 +157,10 @@ func loadInstances(userID, schemaCode, scope, instanceID string) *moduleShared.R
 	fields := []string{}
 	treeJoin := make(map[string]string)
 	columns := []string{}
+	requiredFields := map[string]bool{}
+	requiredFields["id"] = true
 
-	instanceTable := fmt.Sprintf("%s%s", instancesTablePrefix, schemaCode)
+	instanceTable := fmt.Sprintf("%s%s", shared.InstancesTablePrefix, schemaCode)
 
 	for _, f := range securityFields {
 		if f.StructureClass == shared.FieldLookup &&
@@ -154,6 +185,7 @@ func loadInstances(userID, schemaCode, scope, instanceID string) *moduleShared.R
 
 LoopField:
 	for _, rowField := range treeFields {
+		requiredFields[rowField["code"].(string)] = true
 		for _, rowSecurity := range securityInstances {
 			switch rowSecurity.Scope {
 			case shared.SecurityPermissionScopeGroup:
@@ -165,22 +197,9 @@ LoopField:
 					conditions = append(
 						conditions,
 						builder.Raw(
-							fmt.Sprintf(`
-								'%s' @> (
-									SELECT
-										unit.path
-									FROM
-										core_tree_units AS unit
-									JOIN 
-										core_trees AS tree
-									ON
-										tree.id = unit.tree_id
-									WHERE
-										unit.code = %s->>'tree_unit'
-										AND tree.code = %s->>'tree'
-								)`,
+							fmt.Sprintf(
+								"'%s' @> (%s->>'path')::LTREE",
 								rowSecurity.TreeUnitPath,
-								rowField["code"],
 								rowField["code"],
 							),
 						),
@@ -191,24 +210,25 @@ LoopField:
 	}
 
 	instanceIDSchemaCondition := builder.Equal("1", 1)
+	instanceIDCondition := ""
+	if instanceID != "" {
+		instanceIDCondition = fmt.Sprintf("AND intp.instance_id = '%s'", instanceID)
+		instanceIDSchemaCondition = builder.Equal(fmt.Sprintf("%s.id", instanceTable), instanceID)
+	}
+
 	if !hasGroupGlobal {
-		instanceIDCondition := ""
-		if instanceID != "" {
-			instanceIDCondition = fmt.Sprintf("AND intp.instance_id = '%s'", instanceID)
-			instanceIDSchemaCondition = builder.Equal(fmt.Sprintf("%s.id", instanceTable), instanceID)
-		}
 		conditions = append(
 			conditions,
 			builder.Raw(
 				fmt.Sprintf(`
 					%s.id IN (
 						SELECT
-							intp.instance_id
+							instance_id
 						FROM
-							core_instance_premissions AS intp
+							core_instance_premissions
 						WHERE
-							intp.user_id = '%s'
-							AND intp.instance_type = '%s'
+							user_id = '%s'
+							AND instance_type = '%s'
 							%s
 					)`,
 					instanceTable,
@@ -220,6 +240,8 @@ LoopField:
 		)
 	}
 
+	statement.Where(instanceIDSchemaCondition)
+
 	if len(conditions) > 0 {
 		statement.Where(
 			builder.And(
@@ -229,8 +251,6 @@ LoopField:
 				),
 			),
 		)
-	} else {
-		statement.Where(instanceIDSchemaCondition)
 	}
 
 	rows, err := sql.Query(statement)
@@ -245,6 +265,33 @@ LoopField:
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingInstances, fmt.Sprintf("%s parsing query rows to map", scope), err.Error()))
 		return response
+	}
+
+	if instanceID == "" {
+		for key, row := range results {
+			for column := range row {
+				if requiredFields[column] {
+					continue
+				}
+				hasPermission := false
+				for _, securityField := range securityFields {
+					if securityField.InstanceID != "" &&
+						securityField.InstanceID == row["id"].(string) &&
+						securityField.StructureType == shared.SecurityStructureField &&
+						securityField.StructureCode == column {
+						hasPermission = true
+					}
+
+					if hasPermission {
+						break
+					}
+				}
+				if !hasPermission {
+					row[column] = nil
+				}
+			}
+			results[key] = row
+		}
 	}
 
 	response.Data = results
