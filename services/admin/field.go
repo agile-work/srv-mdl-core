@@ -8,6 +8,7 @@ import (
 	"github.com/agile-work/srv-mdl-shared/db"
 	sharedModels "github.com/agile-work/srv-mdl-shared/models"
 	shared "github.com/agile-work/srv-shared"
+	"github.com/go-chi/chi"
 )
 
 // CreateField insert a new field in the database
@@ -19,6 +20,8 @@ func CreateField(r *http.Request) *moduleShared.Response {
 	if response.Code != http.StatusOK {
 		return response
 	}
+
+	field.SchemaCode = chi.URLParam(r, "schema_code")
 
 	err := field.ProcessDefinitions(languageCode, r.Method)
 	if err != nil {
