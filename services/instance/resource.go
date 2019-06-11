@@ -31,13 +31,7 @@ func LoadAllResources(r *http.Request) *moduleShared.Response {
 	columns := []string{}
 
 	for _, f := range securityFields {
-		if f.StructureClass == shared.FieldLookupTree {
-			columns = append(columns, f.StructureCode)
-			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.StructureCode)
-			treeJoin[table] = fmt.Sprintf("%s->>'field' = '%s'", f.StructureCode, f.StructureCode)
-		} else {
-			fields = append(fields, f.StructureCode)
-		}
+		fields = append(fields, f.StructureCode)
 	}
 
 	columns = append(columns, models.GetUserSelectableFields()...)
@@ -86,13 +80,7 @@ func LoadResource(r *http.Request) *moduleShared.Response {
 	columns := []string{}
 
 	for _, f := range securityFields {
-		if f.StructureClass == shared.FieldLookupTree {
-			columns = append(columns, f.StructureCode)
-			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') %s", shared.TableCustomResources, f.StructureCode)
-			treeJoin[table] = fmt.Sprintf("%s->>'field' = '%s'", f.StructureCode, f.StructureCode)
-		} else {
-			fields = append(fields, f.StructureCode)
-		}
+		fields = append(fields, f.StructureCode)
 	}
 
 	columns = append(columns, models.GetUserSelectableFields()...)

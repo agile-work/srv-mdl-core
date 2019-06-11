@@ -509,6 +509,4 @@ func UpdateLookupDynamicParam(r *http.Request, paramType string) *moduleShared.R
 
 	response.Data = param
 	return response
-
-	return nil
 }

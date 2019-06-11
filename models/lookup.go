@@ -149,9 +149,8 @@ func (d *LookupDynamicDefinition) ContainsParam(param LookupParam) int {
 		if f.Code == param.Code && f.DataType == param.DataType {
 			if f.Pattern == param.Pattern {
 				return 0
-			} else {
-				return 1
 			}
+			return 1
 		}
 	}
 	return -1

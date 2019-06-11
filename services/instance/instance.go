@@ -13,7 +13,6 @@ import (
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	sql "github.com/agile-work/srv-shared/sql-builder/db"
 	"github.com/go-chi/chi"
-	"github.com/tidwall/gjson"
 
 	"github.com/agile-work/srv-mdl-core/models"
 )
@@ -163,14 +162,8 @@ func loadInstances(userID, schemaCode, scope, instanceID string) *moduleShared.R
 	instanceTable := fmt.Sprintf("%s%s", shared.InstancesTablePrefix, schemaCode)
 
 	for _, f := range securityFields {
-		if f.StructureClass == shared.FieldLookup &&
-			gjson.Get(string(f.StructureDefinitions), "definitions.lookup_type").String() == shared.FieldLookupTree {
-			columns = append(columns, f.StructureCode)
-			table := fmt.Sprintf("jsonb_array_elements(%s.data->'trees') AS %s", instanceTable, f.StructureCode)
-			treeJoin[table] = fmt.Sprintf("%s->>'field' = '%s'", f.StructureCode, f.StructureCode)
-		} else {
-			fields = append(fields, f.StructureCode)
-		}
+		fields = append(fields, f.StructureCode)
+
 	}
 
 	columns = append(columns, fmt.Sprintf("%s.id", instanceTable))

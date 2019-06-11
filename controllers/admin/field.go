@@ -48,47 +48,15 @@ func DeleteField(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
-// PostFieldGroup sends the request to service deleting a schema
-func PostFieldGroup(w http.ResponseWriter, r *http.Request) {
-	response := services.InsertGroupToField(r)
+// AddFieldValidation sends the request to service add a new field validation
+func AddFieldValidation(w http.ResponseWriter, r *http.Request) {
+	response := services.AddFieldValidation(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
 
-// DeleteFieldGroup sends the request to service deleting a schema
-func DeleteFieldGroup(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteGroupFromField(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// PostFieldValidation sends the request to service creating a new field
-func PostFieldValidation(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateFieldValidation(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// GetAllFieldValidations return all field instances from the service
-func GetAllFieldValidations(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllFieldValidations(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// GetFieldValidation return only one field from the service
-func GetFieldValidation(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadFieldValidation(r)
-
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
-}
-
-// UpdateFieldValidation sends the request to service updating a field
+// UpdateFieldValidation sends the request to service to update a field validation
 func UpdateFieldValidation(w http.ResponseWriter, r *http.Request) {
 	response := services.UpdateFieldValidation(r)
 
@@ -96,7 +64,7 @@ func UpdateFieldValidation(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
-// DeleteFieldValidation sends the request to service deleting a field
+// DeleteFieldValidation sends the request to service to delete a field validation
 func DeleteFieldValidation(w http.ResponseWriter, r *http.Request) {
 	response := services.DeleteFieldValidation(r)
 
