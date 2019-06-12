@@ -30,6 +30,32 @@ type Lookup struct {
 	UpdatedAt   time.Time                `json:"updated_at" sql:"updated_at"`
 }
 
+// GetDynamicDefinition returns the specific definition for a dynamic lookup
+func (l *Lookup) GetDynamicDefinition() (*LookupDynamicDefinition, error) {
+	if l.Type != shared.LookupDynamic {
+		return nil, errors.New("invalid lookup type")
+	}
+	def := &LookupDynamicDefinition{}
+	err := json.Unmarshal(l.Definitions, def)
+	if err != nil {
+		return nil, err
+	}
+	return def, nil
+}
+
+// GetStaticDefinition returns the specific definition for a static lookup
+func (l *Lookup) GetStaticDefinition() (*LookupStaticDefinition, error) {
+	if l.Type != shared.LookupStatic {
+		return nil, errors.New("invalid lookup type")
+	}
+	def := &LookupStaticDefinition{}
+	err := json.Unmarshal(l.Definitions, def)
+	if err != nil {
+		return nil, err
+	}
+	return def, nil
+}
+
 // ParseDefinition parse to a specific definition type for the lookup
 func (l *Lookup) ParseDefinition() error {
 	var def interface{}
@@ -121,6 +147,21 @@ type LookupDynamicDefinition struct {
 	CreatedAt time.Time     `json:"created_at"`
 	UpdatedBy string        `json:"updated_by"`
 	UpdatedAt time.Time     `json:"updated_at"`
+}
+
+// GetValueAndLabel returns the code of the value and label fields in the slice
+func (d *LookupDynamicDefinition) GetValueAndLabel() (string, string) {
+	label := ""
+	value := ""
+	for _, f := range d.Fields {
+		if f.Type == "label" {
+			label = f.Code
+		}
+		if f.Type == "value" {
+			value = f.Code
+		}
+	}
+	return value, label
 }
 
 // GetParamIndex returns the index of the param in the slice
@@ -229,6 +270,13 @@ func (d *LookupDynamicDefinition) ParseQuery(languageCode string) error {
 		d.Fields[i].DataType = parseSQLType(f.DataType)
 		d.Fields[i].Label.Language = make(map[string]string)
 		d.Fields[i].Label.Language[languageCode] = f.Code
+		d.Fields[i].Type = "field"
+		if f.Code == "id" {
+			d.Fields[i].Type = "id"
+		}
+		if f.Code == "label" {
+			d.Fields[i].Type = "label"
+		}
 	}
 
 	trs.Commit()
@@ -240,6 +288,7 @@ type LookupParam struct {
 	Code     string                   `json:"code"`
 	DataType string                   `json:"data_type"`
 	Label    sharedModels.Translation `json:"label"`
+	Type     string                   `json:"field_type,omitempty"`
 	Pattern  string                   `json:"pattern,omitempty"`
 	Security LookupSecurity           `json:"security,omitempty"`
 }

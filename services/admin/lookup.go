@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/agile-work/srv-mdl-shared/db"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -313,6 +312,7 @@ func UpdateLookupOrder(r *http.Request) *moduleShared.Response {
 }
 
 // UpdateLookupQuery update dynamic lookup query
+// TODO: implement a feature to publish the new query to avoid break the system
 func UpdateLookupQuery(r *http.Request) *moduleShared.Response {
 	dynamicLookup := &models.LookupDynamicDefinition{}
 	languageCode := r.Header.Get("Content-Language")
@@ -363,34 +363,37 @@ func UpdateLookupQuery(r *http.Request) *moduleShared.Response {
 	jsonBytes, _ := json.Marshal(lookup.Definitions)
 	json.Unmarshal(jsonBytes, currentDynamicLookup)
 
-	if len(currentDynamicLookup.Fields) > len(dynamicLookup.Fields) || len(currentDynamicLookup.Params) > len(dynamicLookup.Params) {
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "UpdateLookupQuery validation", "can't change query structure"))
+	/*
+		// TODO: Activate this validation when implementing publish lookup
+		if len(currentDynamicLookup.Fields) > len(dynamicLookup.Fields) || len(currentDynamicLookup.Params) > len(dynamicLookup.Params) {
+			response.Code = http.StatusInternalServerError
+			response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "UpdateLookupQuery validation", "can't change query structure"))
 
-		return response
-	}
-
-	errors := []string{}
-
-	for _, f := range currentDynamicLookup.Fields {
-		if !dynamicLookup.ContainsField(f) {
-			errors = append(errors, f.Code)
+			return response
 		}
-	}
 
-	for _, p := range currentDynamicLookup.Params {
-		if dynamicLookup.ContainsParam(p) == -1 {
-			errors = append(errors, p.Code)
+		errors := []string{}
+
+		for _, f := range currentDynamicLookup.Fields {
+			if !dynamicLookup.ContainsField(f) {
+				errors = append(errors, f.Code)
+			}
 		}
-	}
 
-	if len(errors) > 0 {
-		msg := fmt.Sprintf("can't change query structure, invalid: %s", strings.Join(errors, ", "))
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "UpdateLookupQuery validation", msg))
+		for _, p := range currentDynamicLookup.Params {
+			if dynamicLookup.ContainsParam(p) == -1 {
+				errors = append(errors, p.Code)
+			}
+		}
 
-		return response
-	}
+		if len(errors) > 0 {
+			msg := fmt.Sprintf("can't change query structure, invalid: %s", strings.Join(errors, ", "))
+			response.Code = http.StatusInternalServerError
+			response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "UpdateLookupQuery validation", msg))
+
+			return response
+		}
+	*/
 
 	for _, f := range dynamicLookup.Fields {
 		if !currentDynamicLookup.ContainsField(f) {
@@ -471,31 +474,19 @@ func UpdateLookupDynamicParam(r *http.Request, paramType string) *moduleShared.R
 		trs.Add(builder.Raw(sqlQuery))
 	} else if shared.Contains(cols, "label") && languageCode == "all" {
 		jsonBytes, _ := json.Marshal(param.Label)
-		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
-			definitions,
-			('{fields,'|| data_object.obj_index ||'}') ::text[],
-			definitions::jsonb#>('{fields,'|| data_object.obj_index ||'}')::text[] || '{"label": %s}',
-			true
-			) from ( 
-				select index-1 as obj_index from core_lookups ,jsonb_array_elements(definitions->'fields') with ordinality arr(obj, index)
-				where ((obj->>'code') = '%s') and (code = '%s')
-			)data_object
-			where (code = '%s')`, shared.TableCoreLookups, string(jsonBytes), paramCode, lookupCode, lookupCode)
+		sqlQuery := getQueryUpdateField("label", string(jsonBytes), paramCode, lookupCode)
+		trs.Add(builder.Raw(sqlQuery))
+	}
+
+	if shared.Contains(cols, "field_type") && paramType == "field" {
+		jsonBytes, _ := json.Marshal(param.Type)
+		sqlQuery := getQueryUpdateField("field_type", string(jsonBytes), paramCode, lookupCode)
 		trs.Add(builder.Raw(sqlQuery))
 	}
 
 	if shared.Contains(cols, "security") && paramType == "field" {
 		jsonBytes, _ := json.Marshal(param.Security)
-		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
-			definitions,
-			('{fields,'|| data_object.obj_index ||'}') ::text[],
-			definitions::jsonb#>('{fields,'|| data_object.obj_index ||'}')::text[] || '{"security": %s}',
-			true
-			) from ( 
-				select index-1 as obj_index from core_lookups ,jsonb_array_elements(definitions->'fields') with ordinality arr(obj, index)
-				where ((obj->>'code') = '%s') and (code = '%s')
-			)data_object
-			where (code = '%s')`, shared.TableCoreLookups, string(jsonBytes), paramCode, lookupCode, lookupCode)
+		sqlQuery := getQueryUpdateField("security", string(jsonBytes), paramCode, lookupCode)
 		trs.Add(builder.Raw(sqlQuery))
 	}
 
@@ -509,4 +500,17 @@ func UpdateLookupDynamicParam(r *http.Request, paramType string) *moduleShared.R
 
 	response.Data = param
 	return response
+}
+
+func getQueryUpdateField(field, value, paramCode, lookupCode string) string {
+	return fmt.Sprintf(`update %s set definitions = jsonb_set(
+		definitions,
+		('{fields,'|| data_object.obj_index ||'}') ::text[],
+		definitions::jsonb#>('{fields,'|| data_object.obj_index ||'}')::text[] || '{"%s": %s}',
+		true
+		) from ( 
+			select index-1 as obj_index from core_lookups ,jsonb_array_elements(definitions->'fields') with ordinality arr(obj, index)
+			where ((obj->>'code') = '%s') and (code = '%s')
+		)data_object
+		where (code = '%s')`, shared.TableCoreLookups, field, value, paramCode, lookupCode, lookupCode)
 }

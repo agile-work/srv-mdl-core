@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -73,8 +74,28 @@ func (f *Field) ProcessDefinitions(languageCode, method string) error {
 		if lookup.ID == "" {
 			return errors.New("invalid lookup code")
 		}
-		if (lookup.Type == shared.LookupDynamic && ds.Type == shared.FieldLookupStatic) || (lookup.Type == shared.LookupStatic && ds.Type != shared.FieldLookupStatic) {
-			return errors.New("invalid lookup for this field lookup type")
+		if (lookup.Type == shared.LookupDynamic && ds.Type == shared.FieldLookupStatic) ||
+			(lookup.Type == shared.LookupStatic && ds.Type != shared.FieldLookupStatic) {
+			msg := fmt.Sprintf("cannot use lookup type %s with field lookup type %s", lookup.Type, ds.Type)
+			return errors.New(msg)
+		}
+
+		if lookup.Type == shared.LookupStatic {
+			ds.LookupLabel = "label"
+			ds.LookupValue = "code"
+		} else {
+			dynamicDef, err := lookup.GetDynamicDefinition()
+			if err != nil {
+				return err
+			}
+			ds.LookupValue, ds.LookupLabel = dynamicDef.GetValueAndLabel()
+			for _, p := range dynamicDef.Params {
+				param := FieldLookupParam{
+					Code:     p.Code,
+					DataType: p.DataType,
+				}
+				ds.LookupParams = append(ds.LookupParams, param)
+			}
 		}
 		definitionJSON, _ = json.Marshal(ds)
 	case FieldAttachmentDefinition:
