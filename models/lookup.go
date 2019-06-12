@@ -169,6 +169,12 @@ func (d *LookupDynamicDefinition) ParseQuery(languageCode string) error {
 		if len(fields) < 3 {
 			return errors.New("invalid query param")
 		}
+
+		if fields[1] == "security" {
+			parsedQuery = strings.Replace(parsedQuery, p, "1 = 1", -1)
+			continue
+		}
+
 		param.Code = fields[1]
 		if paramCodeExists(d.Params, param.Code) {
 			return errors.New("invalid query param, duplicated code " + param.Code)
@@ -200,6 +206,7 @@ func (d *LookupDynamicDefinition) ParseQuery(languageCode string) error {
 	if err != nil {
 		return err
 	}
+
 	query := fmt.Sprintf("CREATE TEMPORARY TABLE temp_table ON COMMIT DROP AS %s", parsedQuery)
 	_, err = trs.Query(builder.Raw(query))
 	if err != nil {
