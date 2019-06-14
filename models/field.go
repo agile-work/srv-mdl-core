@@ -70,7 +70,7 @@ func (f *Field) ProcessDefinitions(languageCode, method string) error {
 			return err
 		}
 		lookup := Lookup{}
-		sql.LoadStruct(shared.TableCoreLookups, &lookup, builder.Equal("code", ds.LookupCode))
+		sql.SelectStruct(shared.TableCoreLookups, &lookup, builder.Equal("code", ds.LookupCode))
 		if lookup.ID == "" {
 			return errors.New("invalid lookup code")
 		}

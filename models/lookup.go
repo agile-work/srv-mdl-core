@@ -120,13 +120,15 @@ func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 		if err != nil {
 			return err
 		}
-		for i := range staticDef.Options {
+		for code, option := range staticDef.Options {
 			if method == http.MethodPost {
-				staticDef.Options[i].CreatedBy = l.CreatedBy
-				staticDef.Options[i].CreatedAt = l.CreatedAt
+				option.CreatedBy = l.CreatedBy
+				option.CreatedAt = l.CreatedAt
+				staticDef.Options[code] = option
 			}
-			staticDef.Options[i].UpdatedBy = l.UpdatedBy
-			staticDef.Options[i].UpdatedAt = l.UpdatedAt
+			option.UpdatedBy = l.UpdatedBy
+			option.UpdatedAt = l.UpdatedAt
+			staticDef.Options[code] = option
 		}
 		sharedModels.TranslationFieldsRequestLanguageCode = "all"
 		jsonBytes, err := json.Marshal(staticDef)
@@ -301,9 +303,9 @@ type LookupSecurity struct {
 
 // LookupStaticDefinition define specific fields for the lookup definition
 type LookupStaticDefinition struct {
-	Options   []LookupOption `json:"options,omitempty"`
-	OrderType string         `json:"order_type,omitempty"`
-	Order     []string       `json:"order,omitempty"`
+	Options   map[string]LookupOption `json:"options,omitempty"`
+	OrderType string                  `json:"order_type,omitempty"`
+	Order     []string                `json:"order,omitempty"`
 }
 
 // LookupOption defines the struct of a static option
@@ -352,4 +354,44 @@ func paramCodeExists(params []LookupParam, code string) bool {
 		}
 	}
 	return false
+}
+
+// GetInstances returns lookup instances according to type
+func (l *Lookup) GetInstances() ([]map[string]interface{}, error) {
+	results := []map[string]interface{}{}
+	switch l.Type {
+	case shared.LookupStatic:
+		staticDefinition, err := l.GetStaticDefinition()
+		if err != nil {
+			return nil, err
+		}
+		results = staticDefinition.getInstances()
+	case shared.LookupDynamic:
+		dynamicDefinition, err := l.GetDynamicDefinition()
+		if err != nil {
+			return nil, err
+		}
+		results, err = dynamicDefinition.getInstances()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return results, nil
+}
+
+func (d *LookupStaticDefinition) getInstances() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	for _, code := range d.Order {
+		item := map[string]interface{}{}
+		item["code"] = code
+		if option, ok := d.Options[code]; ok && option.Active {
+			item["label"] = option.Label
+		}
+		result = append(result, item)
+	}
+	return result
+}
+
+func (d *LookupDynamicDefinition) getInstances() ([]map[string]interface{}, error) {
+	return nil, nil
 }

@@ -76,7 +76,7 @@ func LoadLookup(r *http.Request) *moduleShared.Response {
 	lookupIDColumn := fmt.Sprintf("%s.code", shared.TableCoreLookups)
 	condition := builder.Equal(lookupIDColumn, lookupCode)
 
-	err := sql.LoadStruct(shared.TableCoreLookups, lookup, condition)
+	err := sql.SelectStruct(shared.TableCoreLookups, lookup, condition)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "LoadLookup", err.Error()))
@@ -344,7 +344,7 @@ func UpdateLookupQuery(r *http.Request) *moduleShared.Response {
 	lookupIDColumn := fmt.Sprintf("%s.code", shared.TableCoreLookups)
 	condition := builder.Equal(lookupIDColumn, lookupCode)
 
-	err = sql.LoadStruct(shared.TableCoreLookups, lookup, condition)
+	err = sql.SelectStruct(shared.TableCoreLookups, lookup, condition)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "UpdateLookupQuery loading lookup", err.Error()))

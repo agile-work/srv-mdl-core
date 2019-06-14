@@ -8,41 +8,49 @@ import (
 	"github.com/go-chi/render"
 )
 
-// PostInstance sends the request to service creating a new schema
-func PostInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateInstance(r)
+// PostSchemaInstance sends the request to service creating a new schema
+func PostSchemaInstance(w http.ResponseWriter, r *http.Request) {
+	response := services.CreateSchemaInstance(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
 
-// GetAllInstances return all schema instances from the service
-func GetAllInstances(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllInstances(r)
+// GetAllSchemaInstances return all schema instances from the service
+func GetAllSchemaInstances(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadAllSchemaInstances(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
 
-// GetInstance return only one schema from the service
-func GetInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadInstance(r)
+// GetSchemaInstance return only one schema from the service
+func GetSchemaInstance(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadSchemaInstance(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
 
-// UpdateInstance sends the request to service updating a schema
-func UpdateInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateInstance(r)
+// UpdateSchemaInstance sends the request to service updating a schema
+func UpdateSchemaInstance(w http.ResponseWriter, r *http.Request) {
+	response := services.UpdateSchemaInstance(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)
 }
 
-// DeleteInstance sends the request to service deleting a schema
-func DeleteInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteInstance(r)
+// DeleteSchemaInstance sends the request to service deleting a schema
+func DeleteSchemaInstance(w http.ResponseWriter, r *http.Request) {
+	response := services.DeleteSchemaInstance(r)
+
+	render.Status(r, response.Code)
+	render.JSON(w, r, response)
+}
+
+// GetLookupInstance return all schema instances from the service
+func GetLookupInstance(w http.ResponseWriter, r *http.Request) {
+	response := services.LoadLookupInstance(r)
 
 	render.Status(r, response.Code)
 	render.JSON(w, r, response)

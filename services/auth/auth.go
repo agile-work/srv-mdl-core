@@ -41,7 +41,7 @@ func Login(r *http.Request) *moduleShared.Response {
 
 	user := models.User{}
 	emailColumn := fmt.Sprintf("%s.email", shared.TableCoreUsers)
-	err = db.LoadStruct(shared.TableCoreUsers, &user, builder.Equal(emailColumn, jsonMap["email"]))
+	err = db.SelectStruct(shared.TableCoreUsers, &user, builder.Equal(emailColumn, jsonMap["email"]))
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "Login load user", err.Error()))

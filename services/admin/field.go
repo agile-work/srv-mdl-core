@@ -1,100 +1,105 @@
 package admin
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/agile-work/srv-shared/sql-builder/builder"
-	"github.com/go-chi/chi"
-
-	"github.com/agile-work/srv-mdl-core/models"
-	moduleShared "github.com/agile-work/srv-mdl-shared"
-	"github.com/agile-work/srv-mdl-shared/db"
-	sharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-mdl-core/models/field"
+	"github.com/agile-work/srv-mdl-core/models/lookup"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 	shared "github.com/agile-work/srv-shared"
-	sql "github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // CreateField insert a new field in the database
-func CreateField(r *http.Request) *moduleShared.Response {
-	field := &models.Field{}
-	languageCode := r.Header.Get("Content-Language")
-	sharedModels.TranslationFieldsRequestLanguageCode = languageCode
-	response := db.GetResponse(r, field, "CreateField")
-	if response.Code != http.StatusOK {
-		return response
-	}
-
-	field.SchemaCode = chi.URLParam(r, "schema_code")
-	total, err := sql.Count("id", shared.TableCoreSchemas, builder.Equal("code", field.SchemaCode))
+func CreateField(fld *field.Field) (string, error) {
+	def, err := fld.GetDefinition()
 	if err != nil {
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "CreateField validating schema", err.Error()))
-
-		return response
-	}
-	if total <= 0 {
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "CreateField validating schema", "invalid schema code"))
-
-		return response
+		return "CreateField processing definitions", err
 	}
 
-	err = field.ProcessDefinitions(languageCode, r.Method)
-	if err != nil {
-		response.Code = http.StatusInternalServerError
-		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorInsertingRecord, "CreateField processing definitions", err.Error()))
+	if fld.Type == shared.FieldLookup {
+		fldLkpDef := def.(*field.LookupDefinition)
+		lkp := lookup.Lookup{}
+		err := lkp.Load(fldLkpDef.LookupCode)
+		if err != nil {
+			return "CreateField load lookup", err
+		}
+		if !lkp.Active {
+			return "CreateField load lookup", errors.New("invalid lookup code")
+		}
 
-		return response
+		lkpDef, err := lkp.GetDefinition()
+		if err != nil {
+			return "CreateField lookup get definition", err
+		}
+
+		fldLkpDef.LookupValue, fldLkpDef.LookupLabel = lkpDef.GetValueAndLabel()
+		if err != nil {
+			return "CreateField lookup get value and label", err
+		}
+
+		if fldLkpDef.Type != shared.FieldLookupStatic {
+			lkpDynDef := lkpDef.(*lookup.DynamicDefinition)
+			for _, p := range lkpDynDef.Params {
+				param := field.LookupParam{
+					Code:     p.Code,
+					DataType: p.DataType,
+				}
+				fldLkpDef.LookupParams = append(fldLkpDef.LookupParams, param)
+			}
+		}
 	}
-	response.Data = field
-	return response
+
+	fld.SetDefinition(def)
+	fld.Create()
+	return "", nil
 }
 
 // LoadAllFields returns all fields from a schema
-func LoadAllFields(r *http.Request) *moduleShared.Response {
-	return &moduleShared.Response{
+func LoadAllFields(r *http.Request) *mdlShared.Response {
+	return &mdlShared.Response{
 		Code: http.StatusNotImplemented,
 	}
 }
 
 // LoadField return an specific field from a schema
-func LoadField(r *http.Request) *moduleShared.Response {
-	return &moduleShared.Response{
+func LoadField(r *http.Request) *mdlShared.Response {
+	return &mdlShared.Response{
 		Code: http.StatusNotImplemented,
 	}
 }
 
 // UpdateField updates the field attributes in the database
-func UpdateField(r *http.Request) *moduleShared.Response {
-	return &moduleShared.Response{
+func UpdateField(r *http.Request) *mdlShared.Response {
+	return &mdlShared.Response{
 		Code: http.StatusNotImplemented,
 	}
 }
 
 // DeleteField deletes an specific field in the database
-func DeleteField(r *http.Request) *moduleShared.Response {
-	return &moduleShared.Response{
+func DeleteField(r *http.Request) *mdlShared.Response {
+	return &mdlShared.Response{
 		Code: http.StatusNotImplemented,
 	}
 }
 
 // AddFieldValidation include a new validation to a field
-func AddFieldValidation(r *http.Request) *moduleShared.Response {
-	return &moduleShared.Response{
+func AddFieldValidation(r *http.Request) *mdlShared.Response {
+	return &mdlShared.Response{
 		Code: http.StatusNotImplemented,
 	}
 }
 
 // UpdateFieldValidation update the validation attributes
-func UpdateFieldValidation(r *http.Request) *moduleShared.Response {
-	return &moduleShared.Response{
+func UpdateFieldValidation(r *http.Request) *mdlShared.Response {
+	return &mdlShared.Response{
 		Code: http.StatusNotImplemented,
 	}
 }
 
 // DeleteFieldValidation delete a validation from the database
-func DeleteFieldValidation(r *http.Request) *moduleShared.Response {
-	return &moduleShared.Response{
+func DeleteFieldValidation(r *http.Request) *mdlShared.Response {
+	return &mdlShared.Response{
 		Code: http.StatusNotImplemented,
 	}
 }

@@ -237,7 +237,7 @@ func CreateJobInstance(r *http.Request) *moduleShared.Response {
 	condition := builder.Equal(jobIDColumn, jobID)
 	job := models.Job{}
 
-	err := sql.LoadStruct(jobTable, &job, condition)
+	err := sql.SelectStruct(jobTable, &job, condition)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "CreateJobInstance load job", err.Error()))
