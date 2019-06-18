@@ -12,7 +12,7 @@ import (
 	shared "github.com/agile-work/srv-shared"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/agile-work/srv-shared/token"
 )
 
 // Login validate credentials and return user token
@@ -41,7 +41,10 @@ func Login(r *http.Request) *moduleShared.Response {
 
 	user := models.User{}
 	emailColumn := fmt.Sprintf("%s.email", shared.TableCoreUsers)
-	err = db.SelectStruct(shared.TableCoreUsers, &user, builder.Equal(emailColumn, jsonMap["email"]))
+	opt := db.Options{
+		Conditions: builder.Equal(emailColumn, jsonMap["email"]),
+	}
+	err = db.SelectStruct(shared.TableCoreUsers, &user, &opt)
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLoadingData, "Login load user", err.Error()))
@@ -64,15 +67,20 @@ func Login(r *http.Request) *moduleShared.Response {
 	}
 
 	user.Password = ""
-	claims := models.UserCustomClaims{
-		user,
-		jwt.StandardClaims{
-			Issuer: "API",
-		},
+
+	payload := make(map[string]interface{})
+	payload["code"] = user.Username
+	payload["scope"] = "user"
+	payload["user_id"] = user.ID
+	payload["language_code"] = user.LanguageCode
+
+	tokenString, err := token.New(payload)
+	if err != nil {
+		err = errors.New("error generation token")
+		response.Code = http.StatusInternalServerError
+		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorLogin, "Login validation", err.Error()))
+		return response
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	cryoSigningKey := []byte("AllYourBase") // TODO: Check the best place for this key, probably the config.toml
-	tokenString, err := token.SignedString(cryoSigningKey)
 
 	jsonMap["user"] = user
 	jsonMap["token"] = tokenString

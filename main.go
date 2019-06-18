@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	moduleShared.ListenAndServe(":3010", routes.Setup())
+	moduleShared.ListenAndServe("core001", ":3010", routes.Setup())
 }

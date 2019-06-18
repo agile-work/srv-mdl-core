@@ -190,7 +190,7 @@ func UpdateLookupOption(r *http.Request) *moduleShared.Response {
 
 	cols := db.GetBodyColumns(r)
 
-	if shared.Contains(cols, "label") && languageCode != "all" {
+	if util.Contains(cols, "label") && languageCode != "all" {
 		label := option.Label.String(languageCode)
 		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
 			definitions,
@@ -203,7 +203,7 @@ func UpdateLookupOption(r *http.Request) *moduleShared.Response {
 			)data_object
 			where (code = '%s')`, shared.TableCoreLookups, languageCode, label, optionCode, lookupCode, lookupCode)
 		trs.Add(builder.Raw(sqlQuery))
-	} else if shared.Contains(cols, "label") && languageCode == "all" {
+	} else if util.Contains(cols, "label") && languageCode == "all" {
 		jsonBytes, _ := json.Marshal(option.Label)
 		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
 			definitions,
@@ -219,7 +219,7 @@ func UpdateLookupOption(r *http.Request) *moduleShared.Response {
 	}
 
 	// get fields from payload
-	if shared.Contains(cols, "active") {
+	if util.Contains(cols, "active") {
 		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
 			definitions,
 			('{options,'|| data_object.obj_index ||'}') ::text[],
@@ -285,7 +285,7 @@ func UpdateLookupOrder(r *http.Request) *moduleShared.Response {
 
 	cols := db.GetBodyColumns(r)
 
-	if !shared.Contains(cols, "order_type") || !shared.Contains(cols, "order") || len(cols) != 2 {
+	if !util.Contains(cols, "order_type") || !util.Contains(cols, "order") || len(cols) != 2 {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "UpdateLookupOrder", "invalid request body"))
 
@@ -324,7 +324,7 @@ func UpdateLookupQuery(r *http.Request) *moduleShared.Response {
 
 	cols := db.GetBodyColumns(r)
 
-	if !shared.Contains(cols, "query") || len(cols) != 1 {
+	if !util.Contains(cols, "query") || len(cols) != 1 {
 		response.Code = http.StatusInternalServerError
 		response.Errors = append(response.Errors, moduleShared.NewResponseError(shared.ErrorParsingRequest, "UpdateLookupQuery", "invalid request body"))
 
@@ -459,7 +459,7 @@ func UpdateLookupDynamicParam(r *http.Request, paramType string) *moduleShared.R
 
 	cols := db.GetBodyColumns(r)
 
-	if shared.Contains(cols, "label") && languageCode != "all" {
+	if util.Contains(cols, "label") && languageCode != "all" {
 		label := param.Label.String(languageCode)
 		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
 			definitions,
@@ -472,19 +472,19 @@ func UpdateLookupDynamicParam(r *http.Request, paramType string) *moduleShared.R
 			)data_object
 			where (code = '%s')`, shared.TableCoreLookups, languageCode, label, paramCode, lookupCode, lookupCode)
 		trs.Add(builder.Raw(sqlQuery))
-	} else if shared.Contains(cols, "label") && languageCode == "all" {
+	} else if util.Contains(cols, "label") && languageCode == "all" {
 		jsonBytes, _ := json.Marshal(param.Label)
 		sqlQuery := getQueryUpdateField("label", string(jsonBytes), paramCode, lookupCode)
 		trs.Add(builder.Raw(sqlQuery))
 	}
 
-	if shared.Contains(cols, "field_type") && paramType == "field" {
+	if util.Contains(cols, "field_type") && paramType == "field" {
 		jsonBytes, _ := json.Marshal(param.Type)
 		sqlQuery := getQueryUpdateField("field_type", string(jsonBytes), paramCode, lookupCode)
 		trs.Add(builder.Raw(sqlQuery))
 	}
 
-	if shared.Contains(cols, "security") && paramType == "field" {
+	if util.Contains(cols, "security") && paramType == "field" {
 		jsonBytes, _ := json.Marshal(param.Security)
 		sqlQuery := getQueryUpdateField("security", string(jsonBytes), paramCode, lookupCode)
 		trs.Add(builder.Raw(sqlQuery))

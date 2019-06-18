@@ -76,7 +76,7 @@ func AddCurrencyRate(r *http.Request) *moduleShared.Response {
 	}
 
 	cols := db.GetBodyColumns(r)
-	if !shared.Contains(cols, "start_at", "end_at") {
+	if !util.Contains(cols, "start_at", "end_at") {
 		trs, err := sql.NewTransaction()
 		if err != nil {
 			response.Code = http.StatusInternalServerError
