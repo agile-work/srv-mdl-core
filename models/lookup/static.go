@@ -5,7 +5,7 @@ import (
 	"time"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	sharedModels "github.com/agile-work/srv-mdl-shared/models"
+	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 )
 
 // StaticDefinition define specific fields for the lookup definition
@@ -18,7 +18,7 @@ type StaticDefinition struct {
 // Option defines the struct of a static option
 type Option struct {
 	Code      string                   `json:"code"`
-	Label     sharedModels.Translation `json:"label,omitempty"`
+	Label     mdlSharedModels.Translation `json:"label,omitempty"`
 	Active    bool                     `json:"active"`
 	CreatedBy string                   `json:"created_by"`
 	CreatedAt time.Time                `json:"created_at"`

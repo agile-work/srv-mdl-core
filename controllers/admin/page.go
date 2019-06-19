@@ -3,47 +3,40 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
-// PostPage sends the request to service creating a new page
-func PostPage(w http.ResponseWriter, r *http.Request) {
-	response := services.CreatePage(r)
+// PostPage sends the request to model creating a new page
+func PostPage(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetAllPages return all page instances from the service
-func GetAllPages(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllPages(r)
+// GetAllPages return all page instances from the model
+func GetAllPages(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetPage return only one page from the service
-func GetPage(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadPage(r)
+// GetPage return only one page from the model
+func GetPage(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// UpdatePage sends the request to service updating a page
-func UpdatePage(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdatePage(r)
+// UpdatePage sends the request to model updating a page
+func UpdatePage(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// DeletePage sends the request to service deleting a page
-func DeletePage(w http.ResponseWriter, r *http.Request) {
-	response := services.DeletePage(r)
+// DeletePage sends the request to model deleting a page
+func DeletePage(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

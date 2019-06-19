@@ -3,47 +3,40 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
-// PostWidget sends the request to service creating a new schema
-func PostWidget(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateWidget(r)
+// PostWidget sends the request to model creating a new widget
+func PostWidget(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetAllWidgets return all schema instances from the service
-func GetAllWidgets(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllWidgets(r)
+// GetAllWidgets return all widget instances from the model
+func GetAllWidgets(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetWidget return only one schema from the service
-func GetWidget(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadWidget(r)
+// GetWidget return only one widget from the model
+func GetWidget(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// UpdateWidget sends the request to service updating a schema
-func UpdateWidget(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateWidget(r)
+// UpdateWidget sends the request to model updating a widget
+func UpdateWidget(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// DeleteWidget sends the request to service deleting a schema
-func DeleteWidget(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteWidget(r)
+// DeleteWidget sends the request to model deleting a widget
+func DeleteWidget(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

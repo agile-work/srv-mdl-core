@@ -3,55 +3,47 @@ package instance
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/instance"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
 // PostSchemaInstance sends the request to service creating a new schema
-func PostSchemaInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateSchemaInstance(r)
+func PostSchemaInstance(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllSchemaInstances return all schema instances from the service
-func GetAllSchemaInstances(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllSchemaInstances(r)
+func GetAllSchemaInstances(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetSchemaInstance return only one schema from the service
-func GetSchemaInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadSchemaInstance(r)
+func GetSchemaInstance(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // UpdateSchemaInstance sends the request to service updating a schema
-func UpdateSchemaInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateSchemaInstance(r)
+func UpdateSchemaInstance(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteSchemaInstance sends the request to service deleting a schema
-func DeleteSchemaInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteSchemaInstance(r)
+func DeleteSchemaInstance(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetLookupInstance return all schema instances from the service
-func GetLookupInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadLookupInstance(r)
+func GetLookupInstance(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

@@ -3,79 +3,208 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
+	"github.com/agile-work/srv-shared/util"
 
-	"github.com/go-chi/render"
+	"github.com/agile-work/srv-mdl-core/models/schema"
+
+	"github.com/go-chi/chi"
+
+	mdlShared "github.com/agile-work/srv-mdl-shared"
+	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
-// PostSchema sends the request to service creating a new schema
-func PostSchema(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateSchema(r)
+// PostSchema sends the request to model creating a new schema
+func PostSchema(res http.ResponseWriter, req *http.Request) {
+	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	schema := &schema.Schema{}
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	if err := response.Load(req, schema); err != nil {
+		response.NewError(http.StatusInternalServerError, "PostSchema response load", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "PostSchema schema new transaction", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+	if err := schema.Create(trs); err != nil {
+		trs.Rollback()
+		response.NewError(http.StatusInternalServerError, "PostSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+	trs.Commit()
+
+	response.Data = schema
+	response.Render(res, req)
 }
 
-// GetAllSchemas return all schema instances from the service
-func GetAllSchemas(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllSchemas(r)
+// GetAllSchemas return all schema instances from the model
+func GetAllSchemas(res http.ResponseWriter, req *http.Request) {
+	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	trs, err := db.NewTransaction()
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "GetAllSchemas schema new transaction", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	metaData := mdlShared.Metadata{}
+	metaData.Load(req)
+	opt := metaData.GenerateDBOptions()
+	schemas := &schema.Schemas{}
+	if err := schemas.LoadAll(trs, opt); err != nil {
+		trs.Rollback()
+		response.NewError(http.StatusInternalServerError, "GetAllSchemas "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+	trs.Commit()
+	response.Data = schemas
+	response.Metadata = metaData
+	response.Render(res, req)
 }
 
-// GetSchema return only one schema from the service
-func GetSchema(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadSchema(r)
+// GetSchema return only one schema from the model
+func GetSchema(res http.ResponseWriter, req *http.Request) {
+	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	trs, err := db.NewTransaction()
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "GetSchema schema new transaction", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	schema := &schema.Schema{Code: chi.URLParam(req, "schema_code")}
+	if err := schema.Load(trs); err != nil {
+		trs.Rollback()
+		response.NewError(http.StatusInternalServerError, "GetSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+	trs.Commit()
+	response.Data = schema
+	response.Render(res, req)
 }
 
-// UpdateSchema sends the request to service updating a schema
-func UpdateSchema(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateSchema(r)
+// UpdateSchema sends the request to model updating a schema
+func UpdateSchema(res http.ResponseWriter, req *http.Request) {
+	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	schema := &schema.Schema{}
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	if err := response.Load(req, schema); err != nil {
+		response.NewError(http.StatusInternalServerError, "UpdateSchema schema new transaction", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	schema.Code = chi.URLParam(req, "schema_code")
+
+	body, err := util.GetBody(req)
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "UpdateSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+
+	columns, translations, err := util.GetColumnsFromBody(body, schema)
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "UpdateSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "UpdateSchema schema new transaction", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	if err := schema.Update(trs, columns, translations); err != nil {
+		trs.Rollback()
+		response.NewError(http.StatusInternalServerError, "UpdateSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+	trs.Commit()
+	response.Data = schema
+	response.Render(res, req)
 }
 
-// DeleteSchema sends the request to service deleting a schema
-func DeleteSchema(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteSchema(r)
+// DeleteSchema sends the request to model deleting a schema
+func DeleteSchema(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	trs, err := db.NewTransaction()
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "DeleteSchema schema new transaction", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	schema := &schema.Schema{Code: chi.URLParam(req, "schema_code")}
+	if err := schema.Delete(trs); err != nil {
+		trs.Rollback()
+		response.NewError(http.StatusInternalServerError, "DeleteSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+	trs.Commit()
+	response.Render(res, req)
 }
 
 // CallDeleteSchema sends the request to service deleting a schema
-func CallDeleteSchema(w http.ResponseWriter, r *http.Request) {
-	response := services.CallDeleteSchema(r)
+func CallDeleteSchema(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	trs, err := db.NewTransaction()
+	if err != nil {
+		response.NewError(http.StatusInternalServerError, "CallDeleteSchema schema new transaction", err.Error())
+		response.Render(res, req)
+		return
+	}
+
+	schema := &schema.Schema{Code: chi.URLParam(req, "schema_code")}
+	if err := schema.CallDelete(trs); err != nil {
+		trs.Rollback()
+		response.NewError(http.StatusInternalServerError, "CallDeleteSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
+		response.Render(res, req)
+		return
+	}
+	trs.Commit()
+	response.Render(res, req)
 }
 
 // PostSchemaModule sends the request to service creating an association between group and user
-func PostSchemaModule(w http.ResponseWriter, r *http.Request) {
-	response := services.InsertModuleInSchema(r)
+func PostSchemaModule(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllModulesBySchema return all user instances by group from the service
-func GetAllModulesBySchema(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllModulesBySchema(r)
+func GetAllModulesBySchema(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteSchemaModule sends the request to service deleting a user from a group
-func DeleteSchemaModule(w http.ResponseWriter, r *http.Request) {
-	response := services.RemoveModuleFromSchema(r)
+func DeleteSchemaModule(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

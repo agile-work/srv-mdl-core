@@ -3,14 +3,12 @@ package auth
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/auth"
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
 // Login endpoint to get user credentials and return token
-func Login(w http.ResponseWriter, r *http.Request) {
-	response := services.Login(r)
+func Login(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

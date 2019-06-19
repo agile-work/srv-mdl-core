@@ -3,47 +3,40 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
-// PostSection sends the request to service creating a new section
-func PostSection(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateSection(r)
+// PostSection sends the request to model creating a new section
+func PostSection(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetAllSections return all section instances from the service
-func GetAllSections(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllSections(r)
+// GetAllSections return all section instances from the model
+func GetAllSections(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetSection return only one section from the service
-func GetSection(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadSection(r)
+// GetSection return only one section from the model
+func GetSection(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// UpdateSection sends the request to service updating a section
-func UpdateSection(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateSection(r)
+// UpdateSection sends the request to model updating a section
+func UpdateSection(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// DeleteSection sends the request to service deleting a section
-func DeleteSection(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteSection(r)
+// DeleteSection sends the request to model deleting a section
+func DeleteSection(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

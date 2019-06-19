@@ -3,31 +3,26 @@ package instance
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/instance"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
 // GetAllResources return all schema instances from the service
-func GetAllResources(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllResources(r)
+func GetAllResources(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetResource return all schema instances from the service
-func GetResource(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadResource(r)
+func GetResource(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // UpdateResource return all schema instances from the service
-func UpdateResource(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateResource(r)
+func UpdateResource(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

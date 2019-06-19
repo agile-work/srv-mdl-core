@@ -3,151 +3,131 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
 // PostTree sends the request to service creating a new schema
-func PostTree(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateTree(r)
+func PostTree(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllTrees return all schema instances from the service
-func GetAllTrees(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllTrees(r)
+func GetAllTrees(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetTree return only one schema from the service
-func GetTree(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadTree(r)
+func GetTree(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // UpdateTree sends the request to service updating a schema
-func UpdateTree(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateTree(r)
+func UpdateTree(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteTree sends the request to service deleting a schema
-func DeleteTree(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteTree(r)
+func DeleteTree(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // PostTreeLevel sends the request to service creating a new schema
-func PostTreeLevel(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateTreeLevel(r)
+func PostTreeLevel(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllTreeLevels return all schema instances from the service
-func GetAllTreeLevels(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllTreeLevels(r)
+func GetAllTreeLevels(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetTreeLevel return only one schema from the service
-func GetTreeLevel(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadTreeLevel(r)
+func GetTreeLevel(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // UpdateTreeLevel sends the request to service updating a schema
-func UpdateTreeLevel(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateTreeLevel(r)
+func UpdateTreeLevel(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteTreeLevel sends the request to service deleting a schema
-func DeleteTreeLevel(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteTreeLevel(r)
+func DeleteTreeLevel(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // PostTreeUnit sends the request to service creating a new schema
-func PostTreeUnit(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateTreeUnit(r)
+func PostTreeUnit(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllTreeUnits return all schema instances from the service
-func GetAllTreeUnits(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllTreeUnits(r)
+func GetAllTreeUnits(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetTreeUnit return only one schema from the service
-func GetTreeUnit(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadTreeUnit(r)
+func GetTreeUnit(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // UpdateTreeUnit sends the request to service updating a schema
-func UpdateTreeUnit(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateTreeUnit(r)
+func UpdateTreeUnit(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteTreeUnit sends the request to service deleting a schema
-func DeleteTreeUnit(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteTreeUnit(r)
+func DeleteTreeUnit(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllTreeUnitPermissions return all schema instances from the service
-func GetAllTreeUnitPermissions(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllTreeUnitPermissions(r)
+func GetAllTreeUnitPermissions(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // PostTreeUnitPermission sends the request to service deleting a schema
-func PostTreeUnitPermission(w http.ResponseWriter, r *http.Request) {
-	response := services.InsertTreeUnitPermission(r)
+func PostTreeUnitPermission(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteTreeUnitPermission sends the request to service deleting a schema
-func DeleteTreeUnitPermission(w http.ResponseWriter, r *http.Request) {
-	response := services.RemoveTreeUnitPermission(r)
+func DeleteTreeUnitPermission(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

@@ -3,47 +3,40 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
-// PostTab sends the request to service creating a new field
-func PostTab(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateTab(r)
+// PostTab sends the request to model creating a new tab
+func PostTab(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetAllTabs return all field instances from the service
-func GetAllTabs(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllTabs(r)
+// GetAllTabs return all tab instances from the model
+func GetAllTabs(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetTab return only one field from the service
-func GetTab(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadTab(r)
+// GetTab return only one tab from the model
+func GetTab(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// UpdateTab sends the request to service updating a field
-func UpdateTab(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateTab(r)
+// UpdateTab sends the request to model updating a tab
+func UpdateTab(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// DeleteTab sends the request to service deleting a field
-func DeleteTab(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteTab(r)
+// DeleteTab sends the request to model deleting a tab
+func DeleteTab(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

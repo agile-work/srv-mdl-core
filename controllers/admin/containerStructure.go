@@ -3,47 +3,40 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
-// PostContainerStructure sends the request to service creating a new sectionStructure
-func PostContainerStructure(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateContainerStructure(r)
+// PostContainerStructure sends the request to model creating a new containerStructure
+func PostContainerStructure(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetAllContainerStructures return all sectionStructure instances from the service
-func GetAllContainerStructures(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllContainerStructures(r)
+// GetAllContainerStructures return all containerStructure instances from the model
+func GetAllContainerStructures(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// GetContainerStructure return only one sectionStructure from the service
-func GetContainerStructure(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadContainerStructure(r)
+// GetContainerStructure return only one containerStructure from the model
+func GetContainerStructure(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// UpdateContainerStructure sends the request to service updating a sectionStructure
-func UpdateContainerStructure(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateContainerStructure(r)
+// UpdateContainerStructure sends the request to model updating a containerStructure
+func UpdateContainerStructure(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
-// DeleteContainerStructure sends the request to service deleting a sectionStructure
-func DeleteContainerStructure(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteContainerStructure(r)
+// DeleteContainerStructure sends the request to model deleting a containerStructure
+func DeleteContainerStructure(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }

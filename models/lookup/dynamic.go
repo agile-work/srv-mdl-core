@@ -5,7 +5,7 @@ import (
 	"time"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	sharedModels "github.com/agile-work/srv-mdl-shared/models"
+	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 )
 
 // DynamicDefinition define specific fields for the lookup definition
@@ -23,7 +23,7 @@ type DynamicDefinition struct {
 type Param struct {
 	Code     string                   `json:"code"`
 	DataType string                   `json:"data_type"`
-	Label    sharedModels.Translation `json:"label"`
+	Label    mdlSharedModels.Translation `json:"label"`
 	Type     string                   `json:"field_type,omitempty"`
 	Pattern  string                   `json:"pattern,omitempty"`
 	Security Security                 `json:"security,omitempty"`

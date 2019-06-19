@@ -2,119 +2,196 @@ package field
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
 
-	sharedModels "github.com/agile-work/srv-mdl-shared/models"
-	shared "github.com/agile-work/srv-shared"
+	"github.com/agile-work/srv-mdl-core/models/lookup"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
+	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
+// Definition defines a interface to represent a definition by type
 type Definition interface {
 	load(payload json.RawMessage) error
 }
 
 // Field defines the struct of this object
 type Field struct {
-	ID           string                   `json:"id" sql:"id" pk:"true"`
-	Code         string                   `json:"code" sql:"code" validate:"required"`
-	SchemaCode   string                   `json:"schema_code" sql:"schema_code" updatable:"false"`
-	Type         string                   `json:"field_type" sql:"field_type" updatable:"false" validate:"required"`
-	Name         sharedModels.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
-	Description  sharedModels.Translation `json:"description" sql:"description" field:"jsonb"`
-	DefaultValue json.RawMessage          `json:"default_value" sql:"default_value" field:"jsonb"`
-	Definitions  json.RawMessage          `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false" validate:"required"`
-	Validations  json.RawMessage          `json:"validations" sql:"validations" field:"jsonb" updatable:"false"`
-	Active       bool                     `json:"active" sql:"active"`
-	CreatedBy    string                   `json:"created_by" sql:"created_by"`
-	CreatedAt    time.Time                `json:"created_at" sql:"created_at"`
-	UpdatedBy    string                   `json:"updated_by" sql:"updated_by"`
-	UpdatedAt    time.Time                `json:"updated_at" sql:"updated_at"`
+	ID           string                      `json:"id" sql:"id" pk:"true"`
+	Code         string                      `json:"code" sql:"code" updatable:"false" validate:"required"`
+	SchemaCode   string                      `json:"schema_code" sql:"schema_code" updatable:"false"`
+	Type         string                      `json:"field_type" sql:"field_type" updatable:"false" validate:"required"`
+	Name         mdlSharedModels.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
+	Description  mdlSharedModels.Translation `json:"description" sql:"description" field:"jsonb"`
+	DefaultValue json.RawMessage             `json:"default_value" sql:"default_value" field:"jsonb"`
+	Definitions  json.RawMessage             `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false" validate:"required"`
+	Validations  json.RawMessage             `json:"validations" sql:"validations" field:"jsonb" updatable:"false"`
+	Active       bool                        `json:"active" sql:"active"`
+	CreatedBy    string                      `json:"created_by" sql:"created_by"`
+	CreatedAt    time.Time                   `json:"created_at" sql:"created_at"`
+	UpdatedBy    string                      `json:"updated_by" sql:"updated_by"`
+	UpdatedAt    time.Time                   `json:"updated_at" sql:"updated_at"`
 }
 
-func (f *Field) Create(columns ...string) error {
-	id, err := db.InsertStruct(shared.TableCoreSchemaFields, f, columns...)
-	f.ID = id
-	return err
-}
+// Fields defines the array struct of this object
+type Fields []Field
 
-func (f *Field) Update(columns []string, translations map[string]string) error {
-	trs, err := db.NewTransaction()
+// Create persists the struct creating a new object in the database
+func (f *Field) Create(trs *db.Transaction, columns ...string) error {
+	def, err := f.GetDefinition()
 	if err != nil {
-		return err
+		return mdlShared.NewError("field processing definitions", err.Error())
 	}
-	conditions := builder.And(
+
+	if f.Type == constants.FieldLookup {
+		fldLkpDef := def.(*LookupDefinition)
+		lkp := lookup.Lookup{}
+		err := lkp.Load(fldLkpDef.LookupCode)
+		if err != nil {
+			return mdlShared.NewError("lookup load", err.Error())
+		}
+		if !lkp.Active {
+			return mdlShared.NewError("lookup load", "invalid lookup code")
+		}
+
+		lkpDef, err := lkp.GetDefinition()
+		if err != nil {
+			return mdlShared.NewError("lookup get definition", err.Error())
+		}
+
+		fldLkpDef.LookupValue, fldLkpDef.LookupLabel = lkpDef.GetValueAndLabel()
+		if err != nil {
+			return mdlShared.NewError("lookup get value and label", err.Error())
+		}
+
+		if fldLkpDef.Type != constants.FieldLookupStatic {
+			lkpDynDef := lkpDef.(*lookup.DynamicDefinition)
+			for _, p := range lkpDynDef.Params {
+				param := LookupParam{
+					Code:     p.Code,
+					DataType: p.DataType,
+				}
+				fldLkpDef.LookupParams = append(fldLkpDef.LookupParams, param)
+			}
+		}
+	}
+
+	f.SetDefinition(def)
+	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreSchemaFields, f, columns...)
+	if err != nil {
+		return mdlShared.NewError("field create", err.Error())
+	}
+	f.ID = id
+	return nil
+}
+
+// LoadAll defines all instances from the object
+func (f *Fields) LoadAll(trs *db.Transaction, opt *db.Options) error {
+	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemaFields, f, opt); err != nil {
+		return mdlShared.NewError("fields load", err.Error())
+	}
+	return nil
+}
+
+// Load defines only one object from the database
+func (f *Field) Load(trs *db.Transaction) error {
+	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemaFields, f, &db.Options{Conditions: builder.And(
 		builder.Equal("code", f.Code),
 		builder.Equal("schema_code", f.SchemaCode),
-	)
+	)}); err != nil {
+		return mdlShared.NewError("field load", err.Error())
+	}
+	return nil
+}
+
+// Update updates object data in the database
+func (f *Field) Update(trs *db.Transaction, columns []string, translations map[string]string) error {
+	opt := &db.Options{Conditions: builder.And(
+		builder.Equal("code", f.Code),
+		builder.Equal("schema_code", f.SchemaCode),
+	)}
+
 	if len(columns) > 0 {
-		trs.Add(db.StructUpdateStatement(shared.TableCoreSchemaFields, f, strings.Join(columns, ","), conditions))
+		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreSchemaFields, f, opt, strings.Join(columns, ",")); err != nil {
+			return mdlShared.NewError("field update", err.Error())
+		}
 	}
 
 	if len(translations) > 0 {
-		statement := builder.Update(shared.TableCoreSchemaFields)
+		statement := builder.Update(constants.TableCoreSchemaFields)
 		for col, val := range translations {
-			statement.JSON(col, sharedModels.TranslationFieldsRequestLanguageCode)
+			statement.JSON(col, mdlSharedModels.TranslationFieldsRequestLanguageCode)
 			jsonVal, _ := json.Marshal(val)
 			statement.Values(jsonVal)
 		}
-		statement.Where(conditions)
-		trs.Add(statement)
+		statement.Where(opt.Conditions)
+		if _, err := trs.Query(statement); err != nil {
+			return mdlShared.NewError("field update", err.Error())
+		}
 	}
 
-	return trs.Exec()
+	return nil
 }
 
-func (f *Field) Load() error {
-	return db.SelectStruct(shared.TableCoreSchemaFields, f, builder.And(
+// Delete deletes object from the database
+func (f *Field) Delete(trs *db.Transaction) error {
+	if err := db.DeleteStructTx(trs.Tx, constants.TableCoreSchemaFields, &db.Options{Conditions: builder.And(
 		builder.Equal("code", f.Code),
 		builder.Equal("schema_code", f.SchemaCode),
-	))
+	)}); err != nil {
+		return mdlShared.NewError("field delete", err.Error())
+	}
+	return nil
 }
 
-func (f *Field) Delete() error {
-	return db.DeleteStruct(shared.TableCoreSchemaFields, builder.And(
-		builder.Equal("code", f.Code),
-		builder.Equal("schema_code", f.SchemaCode),
-	))
+// AddFieldValidation include a new validation to a field
+func (f *Field) AddFieldValidation(trs *db.Transaction) error {
+	return nil
 }
 
+// UpdateFieldValidation update the validation attributes
+func (f *Field) UpdateFieldValidation(trs *db.Transaction) error {
+	return nil
+}
+
+// DeleteFieldValidation delete a validation from the database
+func (f *Field) DeleteFieldValidation(trs *db.Transaction) error {
+	return nil
+}
+
+// SetDefinition defines the definition in field struct
 func (f *Field) SetDefinition(def Definition) {
 	defBytes, _ := json.Marshal(def)
 	json.Unmarshal(defBytes, &f.Definitions)
 }
 
+// GetDefinition get the definition in field struct by type
 func (f *Field) GetDefinition() (Definition, error) {
 	switch f.Type {
-	case shared.FieldText:
+	case constants.FieldText:
 		def := &TextDefinition{}
 		err := def.load(f.Definitions)
 		return def, err
-	case shared.FieldNumber:
+	case constants.FieldNumber:
 		def := &NumberDefinition{}
 		err := def.load(f.Definitions)
 		return def, err
-	case shared.FieldDate:
+	case constants.FieldDate:
 		def := &DateDefinition{}
 		err := def.load(f.Definitions)
 		return def, err
-	case shared.FieldLookup:
+	case constants.FieldLookup:
 		def := &LookupDefinition{}
 		err := def.load(f.Definitions)
 		return def, err
-	case shared.FieldAttachment:
+	case constants.FieldAttachment:
 		def := &AttachmentDefinition{}
 		err := def.load(f.Definitions)
 		return def, err
 	default:
-		return nil, errors.New("invalid field type")
+		return nil, mdlShared.NewError("field get definition", "invalid field type")
 	}
-}
-
-func LoadAll(schemaCode string) ([]Field, error) {
-	fields := []Field{}
-	err := db.SelectStruct(shared.TableCoreSchemaFields, &fields, builder.Equal("schema_code", schemaCode))
-	return fields, err
 }

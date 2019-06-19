@@ -3,143 +3,124 @@ package admin
 import (
 	"net/http"
 
-	services "github.com/agile-work/srv-mdl-core/services/admin"
-
-	"github.com/go-chi/render"
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 )
 
 // PostJob sends the request to service creating a new schema
-func PostJob(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateJob(r)
+func PostJob(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllJobs return all schema instances from the service
-func GetAllJobs(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllJobs(r)
+func GetAllJobs(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetJob return only one schema from the service
-func GetJob(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadJob(r)
+func GetJob(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // UpdateJob sends the request to service updating a schema
-func UpdateJob(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateJob(r)
+func UpdateJob(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteJob sends the request to service deleting a schema
-func DeleteJob(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteJob(r)
+func DeleteJob(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllJobInstances return all schema instances from the service
-func GetAllJobInstances(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllJobInstances(r)
+func GetAllJobInstances(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // PostJobTask sends the request to service creating a new schema
-func PostJobTask(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateJobTask(r)
+func PostJobTask(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllJobTasks return all schema instances from the service
-func GetAllJobTasks(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllJobTasks(r)
+func GetAllJobTasks(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetJobTask return only one schema from the service
-func GetJobTask(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadJobTask(r)
+func GetJobTask(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // UpdateJobTask sends the request to service updating a schema
-func UpdateJobTask(w http.ResponseWriter, r *http.Request) {
-	response := services.UpdateJobTask(r)
+func UpdateJobTask(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // DeleteJobTask sends the request to service deleting a schema
-func DeleteJobTask(w http.ResponseWriter, r *http.Request) {
-	response := services.DeleteJobTask(r)
+func DeleteJobTask(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // GetAllJobTaskInstances return all schema instances from the service
-func GetAllJobTaskInstances(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllJobTaskInstances(r)
+func GetAllJobTaskInstances(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // LoadAllJobFollowersAvaible sends the request to service deleting a schema
-func LoadAllJobFollowersAvaible(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllJobFollowersAvaible(r)
+func LoadAllJobFollowersAvaible(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // InsertFollowerInJob sends the request to service deleting a schema
-func InsertFollowerInJob(w http.ResponseWriter, r *http.Request) {
-	response := services.InsertFollowerInJob(r)
+func InsertFollowerInJob(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // LoadAllFollowersByJob sends the request to service deleting a schema
-func LoadAllFollowersByJob(w http.ResponseWriter, r *http.Request) {
-	response := services.LoadAllFollowersByJob(r)
+func LoadAllFollowersByJob(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // RemoveFollowerFromJob sends the request to service deleting a schema
-func RemoveFollowerFromJob(w http.ResponseWriter, r *http.Request) {
-	response := services.RemoveFollowerFromJob(r)
+func RemoveFollowerFromJob(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
 
 // PostJobInstance sends the request to service deleting a schema
-func PostJobInstance(w http.ResponseWriter, r *http.Request) {
-	response := services.CreateJobInstance(r)
+func PostJobInstance(res http.ResponseWriter, req *http.Request) {
+	response := mdlShared.NewResponse()
 
-	render.Status(r, response.Code)
-	render.JSON(w, r, response)
+	response.Render(res, req)
 }
