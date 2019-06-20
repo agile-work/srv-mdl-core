@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/util"
 
 	"github.com/agile-work/srv-mdl-core/models/schema"
@@ -10,13 +11,12 @@ import (
 	"github.com/go-chi/chi"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // PostSchema sends the request to model creating a new schema
 func PostSchema(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	schema := &schema.Schema{}
 	response := mdlShared.NewResponse()
 
@@ -33,7 +33,7 @@ func PostSchema(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+	translation.FieldsRequestLanguageCode = "all"
 	if err := schema.Create(trs); err != nil {
 		trs.Rollback()
 		response.NewError(http.StatusInternalServerError, "PostSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
@@ -48,7 +48,7 @@ func PostSchema(res http.ResponseWriter, req *http.Request) {
 
 // GetAllSchemas return all schema instances from the model
 func GetAllSchemas(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -76,7 +76,7 @@ func GetAllSchemas(res http.ResponseWriter, req *http.Request) {
 
 // GetSchema return only one schema from the model
 func GetSchema(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -100,7 +100,7 @@ func GetSchema(res http.ResponseWriter, req *http.Request) {
 
 // UpdateSchema sends the request to model updating a schema
 func UpdateSchema(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	schema := &schema.Schema{}
 	response := mdlShared.NewResponse()
 
@@ -112,7 +112,7 @@ func UpdateSchema(res http.ResponseWriter, req *http.Request) {
 
 	schema.Code = chi.URLParam(req, "schema_code")
 
-	body, err := util.GetBody(req)
+	body, err := util.GetBodyMap(req)
 	if err != nil {
 		response.NewError(http.StatusInternalServerError, "UpdateSchema "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
 		response.Render(res, req)

@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/util"
 
 	"github.com/agile-work/srv-mdl-core/models/currency"
@@ -10,13 +11,12 @@ import (
 	"github.com/go-chi/chi"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // PostCurrency sends the request to model creating a new currency
 func PostCurrency(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	currency := &currency.Currency{}
 	response := mdlShared.NewResponse()
 
@@ -33,7 +33,7 @@ func PostCurrency(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+	translation.FieldsRequestLanguageCode = "all"
 	if err := currency.Create(trs); err != nil {
 		trs.Rollback()
 		response.NewError(http.StatusInternalServerError, "PostCurrency "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
@@ -48,7 +48,7 @@ func PostCurrency(res http.ResponseWriter, req *http.Request) {
 
 // GetAllCurrencies return all currency instances from the model
 func GetAllCurrencies(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -76,7 +76,7 @@ func GetAllCurrencies(res http.ResponseWriter, req *http.Request) {
 
 // GetCurrency return only one currency from the model
 func GetCurrency(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -100,7 +100,7 @@ func GetCurrency(res http.ResponseWriter, req *http.Request) {
 
 // UpdateCurrency sends the request to model updating a currency
 func UpdateCurrency(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	currency := &currency.Currency{}
 	response := mdlShared.NewResponse()
 
@@ -112,7 +112,7 @@ func UpdateCurrency(res http.ResponseWriter, req *http.Request) {
 
 	currency.Code = chi.URLParam(req, "currency_code")
 
-	body, err := util.GetBody(req)
+	body, err := util.GetBodyMap(req)
 	if err != nil {
 		response.NewError(http.StatusInternalServerError, "UpdateCurrency "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
 		response.Render(res, req)
@@ -168,7 +168,7 @@ func DeleteCurrency(res http.ResponseWriter, req *http.Request) {
 
 // AddRate sends the request to model creating a new rate
 func AddRate(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	rate := &currency.Rate{}
 	response := mdlShared.NewResponse()
 
@@ -181,21 +181,14 @@ func AddRate(res http.ResponseWriter, req *http.Request) {
 	fromCode := chi.URLParam(req, "currency_code")
 	toCode := chi.URLParam(req, "to_currency_code")
 
-	body, err := util.GetBody(req)
+	body, err := util.GetBodyMap(req)
 	if err != nil {
 		response.NewError(http.StatusInternalServerError, "AddRate "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
 		response.Render(res, req)
 		return
 	}
 
-	cols, err := util.GetBodyColumns(body)
-	if err != nil {
-		response.NewError(http.StatusInternalServerError, "AddRate "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
-		return
-	}
-
-	if !util.Contains(cols, "start_at", "end_at") {
+	if !util.Contains(util.GetBodyColumns(body), "start_at", "end_at") {
 		trs, err := db.NewTransaction()
 		if err != nil {
 			response.NewError(http.StatusInternalServerError, "AddRate currency new transaction", err.Error())

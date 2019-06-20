@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/util"
 
 	"github.com/agile-work/srv-mdl-core/models/language"
@@ -10,13 +11,12 @@ import (
 	"github.com/go-chi/chi"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // PostLanguage sends the request to model creating a new language
 func PostLanguage(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	language := &language.Language{}
 	response := mdlShared.NewResponse()
 
@@ -33,7 +33,7 @@ func PostLanguage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+	translation.FieldsRequestLanguageCode = "all"
 	if err := language.Create(trs); err != nil {
 		trs.Rollback()
 		response.NewError(http.StatusInternalServerError, "PostLanguage "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
@@ -48,7 +48,7 @@ func PostLanguage(res http.ResponseWriter, req *http.Request) {
 
 // GetAllLanguages return all language instances from the model
 func GetAllLanguages(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -76,7 +76,7 @@ func GetAllLanguages(res http.ResponseWriter, req *http.Request) {
 
 // GetLanguage return only one language from the model
 func GetLanguage(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -100,7 +100,7 @@ func GetLanguage(res http.ResponseWriter, req *http.Request) {
 
 // UpdateLanguage sends the request to model updating a language
 func UpdateLanguage(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	language := &language.Language{}
 	response := mdlShared.NewResponse()
 
@@ -112,7 +112,7 @@ func UpdateLanguage(res http.ResponseWriter, req *http.Request) {
 
 	language.Code = chi.URLParam(req, "language_code")
 
-	body, err := util.GetBody(req)
+	body, err := util.GetBodyMap(req)
 	if err != nil {
 		response.NewError(http.StatusInternalServerError, "UpdateLanguage "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
 		response.Render(res, req)

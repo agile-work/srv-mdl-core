@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 
 	"github.com/agile-work/srv-shared/util"
@@ -12,13 +13,12 @@ import (
 	"github.com/go-chi/chi"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // PostField sends the request to model creating a new field
 func PostField(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	field := &field.Field{}
 	response := mdlShared.NewResponse()
 
@@ -37,7 +37,7 @@ func PostField(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+	translation.FieldsRequestLanguageCode = "all"
 	if err := field.Create(trs); err != nil {
 		trs.Rollback()
 		response.NewError(http.StatusInternalServerError, "PostField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
@@ -52,7 +52,7 @@ func PostField(res http.ResponseWriter, req *http.Request) {
 
 // GetAllFields return all field instances from the model
 func GetAllFields(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -81,7 +81,7 @@ func GetAllFields(res http.ResponseWriter, req *http.Request) {
 
 // GetField return only one field from the model
 func GetField(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -105,7 +105,7 @@ func GetField(res http.ResponseWriter, req *http.Request) {
 
 // UpdateField sends the request to model updating a field
 func UpdateField(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	field := &field.Field{}
 	response := mdlShared.NewResponse()
 
@@ -118,7 +118,7 @@ func UpdateField(res http.ResponseWriter, req *http.Request) {
 	field.SchemaCode = chi.URLParam(req, "schema_code")
 	field.Code = chi.URLParam(req, "field_code")
 
-	body, err := util.GetBody(req)
+	body, err := util.GetBodyMap(req)
 	if err != nil {
 		response.NewError(http.StatusInternalServerError, "UpdateField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
 		response.Render(res, req)

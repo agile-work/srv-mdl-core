@@ -20,13 +20,13 @@ package admin
 // func CreateLookup(r *http.Request) *mdlShared.Response {
 // 	lookup := &models.Lookup{}
 // 	languageCode := r.Header.Get("Content-Language")
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = languageCode
+// 	translation.FieldsRequestLanguageCode = languageCode
 // 	response := db.GetResponse(r, lookup, "CreateLookup")
 // 	if response.Code != http.StatusOK {
 // 		return response
 // 	}
 // 	// TODO: validate required fields on struct
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+// 	translation.FieldsRequestLanguageCode = "all"
 // 	err := lookup.ProcessDefinitions(languageCode, r.Method)
 // 	if err != nil {
 // 		response.Code = http.StatusInternalServerError
@@ -66,7 +66,7 @@ package admin
 
 // // LoadLookup return only one object from the database
 // func LoadLookup(r *http.Request) *mdlShared.Response {
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = r.Header.Get("Content-Language")
+// 	translation.FieldsRequestLanguageCode = r.Header.Get("Content-Language")
 // 	response := &mdlShared.Response{
 // 		Code: http.StatusOK,
 // 	}
@@ -122,7 +122,7 @@ package admin
 // 	option := &models.LookupOption{}
 // 	lookupCode := chi.URLParam(r, "lookup_code")
 // 	languageCode := r.Header.Get("Content-Language")
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = languageCode
+// 	translation.FieldsRequestLanguageCode = languageCode
 // 	response := db.GetResponse(r, option, "AddLookupOption")
 // 	if response.Code != http.StatusOK {
 // 		return response
@@ -150,7 +150,7 @@ package admin
 // 		return response
 // 	}
 
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+// 	translation.FieldsRequestLanguageCode = "all"
 // 	optionBytes, _ := json.Marshal(option)
 // 	querySQL = fmt.Sprintf(`update %s set definitions = jsonb_insert(
 // 		definitions, '{options,-1}', '%s', true)
@@ -174,7 +174,7 @@ package admin
 // 	lookupCode := chi.URLParam(r, "lookup_code")
 // 	optionCode := chi.URLParam(r, "option_code")
 // 	languageCode := r.Header.Get("Content-Language")
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = languageCode
+// 	translation.FieldsRequestLanguageCode = languageCode
 // 	response := db.GetResponse(r, option, "AddLookupOption")
 // 	if response.Code != http.StatusOK {
 // 		return response
@@ -318,7 +318,7 @@ package admin
 // func UpdateLookupQuery(r *http.Request) *mdlShared.Response {
 // 	dynamicLookup := &models.LookupDynamicDefinition{}
 // 	languageCode := r.Header.Get("Content-Language")
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+// 	translation.FieldsRequestLanguageCode = "all"
 // 	response := db.GetResponse(r, dynamicLookup, "AddLookupOption")
 // 	if response.Code != http.StatusOK {
 // 		return response
@@ -433,7 +433,7 @@ package admin
 // 		return response
 // 	}
 
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = languageCode
+// 	translation.FieldsRequestLanguageCode = languageCode
 // 	response.Data = lookup
 
 // 	return response
@@ -445,7 +445,7 @@ package admin
 // 	lookupCode := chi.URLParam(r, "lookup_code")
 // 	paramCode := chi.URLParam(r, "param_code")
 // 	languageCode := r.Header.Get("Content-Language")
-// 	mdlSharedModels.TranslationFieldsRequestLanguageCode = languageCode
+// 	translation.FieldsRequestLanguageCode = languageCode
 // 	response := db.GetResponse(r, param, "AddLookupOption")
 // 	if response.Code != http.StatusOK {
 // 		return response

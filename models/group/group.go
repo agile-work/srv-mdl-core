@@ -5,8 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/agile-work/srv-mdl-shared/models/translation"
+
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -14,19 +15,19 @@ import (
 
 // Group defines the struct of this object
 type Group struct {
-	ID                      string                      `json:"id" sql:"id" pk:"true"`
-	Code                    string                      `json:"code" sql:"code"`
-	Name                    mdlSharedModels.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
-	Description             mdlSharedModels.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
-	TreeUnitID              *string                     `json:"tree_unit_id" sql:"tree_unit_id"`
-	TreeUnitPermissionScope *string                     `json:"tree_unit_permission_scope" sql:"tree_unit_permission_scope"`
-	Permissions             []Permission                `json:"permissions" sql:"permissions" field:"jsonb"`
-	Users                   []GroupUser                 `json:"users" sql:"users" field:"jsonb"`
-	Active                  bool                        `json:"active" sql:"active"`
-	CreatedBy               string                      `json:"created_by" sql:"created_by"`
-	CreatedAt               time.Time                   `json:"created_at" sql:"created_at"`
-	UpdatedBy               string                      `json:"updated_by" sql:"updated_by"`
-	UpdatedAt               time.Time                   `json:"updated_at" sql:"updated_at"`
+	ID                      string                  `json:"id" sql:"id" pk:"true"`
+	Code                    string                  `json:"code" sql:"code"`
+	Name                    translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
+	Description             translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
+	TreeUnitID              *string                 `json:"tree_unit_id" sql:"tree_unit_id"`
+	TreeUnitPermissionScope *string                 `json:"tree_unit_permission_scope" sql:"tree_unit_permission_scope"`
+	Permissions             []Permission            `json:"permissions" sql:"permissions" field:"jsonb"`
+	Users                   []GroupUser             `json:"users" sql:"users" field:"jsonb"`
+	Active                  bool                    `json:"active" sql:"active"`
+	CreatedBy               string                  `json:"created_by" sql:"created_by"`
+	CreatedAt               time.Time               `json:"created_at" sql:"created_at"`
+	UpdatedBy               string                  `json:"updated_by" sql:"updated_by"`
+	UpdatedAt               time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
 // GroupUser defines the struct to the jsonb field in group
@@ -110,7 +111,7 @@ func (g *Group) Update(trs *db.Transaction, columns []string, translations map[s
 	if len(translations) > 0 {
 		statement := builder.Update(constants.TableCoreGroups)
 		for col, val := range translations {
-			statement.JSON(col, mdlSharedModels.TranslationFieldsRequestLanguageCode)
+			statement.JSON(col, translation.FieldsRequestLanguageCode)
 			jsonVal, _ := json.Marshal(val)
 			statement.Values(jsonVal)
 		}

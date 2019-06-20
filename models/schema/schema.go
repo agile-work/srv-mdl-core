@@ -6,8 +6,8 @@ import (
 	"time"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-mdl-shared/models/job"
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -15,20 +15,20 @@ import (
 
 // Schema defines the struct of this object
 type Schema struct {
-	ID          string                      `json:"id" sql:"id" pk:"true"`
-	JobID       string                      `json:"job_id" sql:"job_id" fk:"true"`
-	Code        string                      `json:"code" sql:"code" updatable:"false" validate:"required"`
-	Name        mdlSharedModels.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
-	Description mdlSharedModels.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
-	Parent      string                      `json:"parent_id" sql:"parent_id"`
-	IsExtension bool                        `json:"is_extension" sql:"is_extension"`
-	Module      bool                        `json:"module" sql:"module"`
-	Active      bool                        `json:"active" sql:"active"`
-	Status      string                      `json:"status" sql:"status"`
-	CreatedBy   string                      `json:"created_by" sql:"created_by"`
-	CreatedAt   time.Time                   `json:"created_at" sql:"created_at"`
-	UpdatedBy   string                      `json:"updated_by" sql:"updated_by"`
-	UpdatedAt   time.Time                   `json:"updated_at" sql:"updated_at"`
+	ID          string                  `json:"id" sql:"id" pk:"true"`
+	JobID       string                  `json:"job_id" sql:"job_id" fk:"true"`
+	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
+	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
+	Parent      string                  `json:"parent_id" sql:"parent_id"`
+	IsExtension bool                    `json:"is_extension" sql:"is_extension"`
+	Module      bool                    `json:"module" sql:"module"`
+	Active      bool                    `json:"active" sql:"active"`
+	Status      string                  `json:"status" sql:"status"`
+	CreatedBy   string                  `json:"created_by" sql:"created_by"`
+	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
+	UpdatedBy   string                  `json:"updated_by" sql:"updated_by"`
+	UpdatedAt   time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
 // ViewSchModules defines the struct of this object
@@ -106,7 +106,7 @@ func (s *Schema) Update(trs *db.Transaction, columns []string, translations map[
 	if len(translations) > 0 {
 		statement := builder.Update(constants.TableCoreSchemas)
 		for col, val := range translations {
-			statement.JSON(col, mdlSharedModels.TranslationFieldsRequestLanguageCode)
+			statement.JSON(col, translation.FieldsRequestLanguageCode)
 			jsonVal, _ := json.Marshal(val)
 			statement.Values(jsonVal)
 		}

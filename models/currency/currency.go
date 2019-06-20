@@ -7,7 +7,7 @@ import (
 	"time"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -15,15 +15,15 @@ import (
 
 // Currency defines the struct of this object
 type Currency struct {
-	ID        string                      `json:"id" sql:"id" pk:"true"`
-	Code      string                      `json:"code" sql:"code" updatable:"false"`
-	Name      mdlSharedModels.Translation `json:"name" sql:"name" field:"jsonb"`
-	Rates     map[string][]Rate           `json:"rates" sql:"rates" field:"jsonb"`
-	Active    bool                        `json:"active" sql:"active"`
-	CreatedBy string                      `json:"created_by" sql:"created_by"`
-	CreatedAt time.Time                   `json:"created_at" sql:"created_at"`
-	UpdatedBy string                      `json:"updated_by" sql:"updated_by"`
-	UpdatedAt time.Time                   `json:"updated_at" sql:"updated_at"`
+	ID        string                  `json:"id" sql:"id" pk:"true"`
+	Code      string                  `json:"code" sql:"code" updatable:"false"`
+	Name      translation.Translation `json:"name" sql:"name" field:"jsonb"`
+	Rates     map[string][]Rate       `json:"rates" sql:"rates" field:"jsonb"`
+	Active    bool                    `json:"active" sql:"active"`
+	CreatedBy string                  `json:"created_by" sql:"created_by"`
+	CreatedAt time.Time               `json:"created_at" sql:"created_at"`
+	UpdatedBy string                  `json:"updated_by" sql:"updated_by"`
+	UpdatedAt time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
 // Rate defines the struct of this object
@@ -79,7 +79,7 @@ func (c *Currency) Update(trs *db.Transaction, columns []string, translations ma
 	if len(translations) > 0 {
 		statement := builder.Update(constants.TableCoreCurrencies)
 		for col, val := range translations {
-			statement.JSON(col, mdlSharedModels.TranslationFieldsRequestLanguageCode)
+			statement.JSON(col, translation.FieldsRequestLanguageCode)
 			jsonVal, _ := json.Marshal(val)
 			statement.Values(jsonVal)
 		}

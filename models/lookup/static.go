@@ -5,7 +5,7 @@ import (
 	"time"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 )
 
 // StaticDefinition define specific fields for the lookup definition
@@ -17,13 +17,13 @@ type StaticDefinition struct {
 
 // Option defines the struct of a static option
 type Option struct {
-	Code      string                   `json:"code"`
-	Label     mdlSharedModels.Translation `json:"label,omitempty"`
-	Active    bool                     `json:"active"`
-	CreatedBy string                   `json:"created_by"`
-	CreatedAt time.Time                `json:"created_at"`
-	UpdatedBy string                   `json:"updated_by"`
-	UpdatedAt time.Time                `json:"updated_at"`
+	Code      string                  `json:"code"`
+	Label     translation.Translation `json:"label,omitempty"`
+	Active    bool                    `json:"active"`
+	CreatedBy string                  `json:"created_by"`
+	CreatedAt time.Time               `json:"created_at"`
+	UpdatedBy string                  `json:"updated_by"`
+	UpdatedAt time.Time               `json:"updated_at"`
 }
 
 func (d *StaticDefinition) parse(payload json.RawMessage) error {

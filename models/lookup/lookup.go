@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	sql "github.com/agile-work/srv-shared/sql-builder/db"
@@ -18,17 +18,17 @@ type Definition interface {
 
 // Lookup defines the struct of this object
 type Lookup struct {
-	ID          string                      `json:"id" sql:"id" pk:"true"`
-	Code        string                      `json:"code" sql:"code" updatable:"false"`
-	Type        string                      `json:"type" sql:"type" updatable:"false"`
-	Name        mdlSharedModels.Translation `json:"name" sql:"name" field:"jsonb"`
-	Description mdlSharedModels.Translation `json:"description" sql:"description" field:"jsonb"`
-	Definitions json.RawMessage             `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"`
-	Active      bool                        `json:"active" sql:"active"`
-	CreatedBy   string                      `json:"created_by" sql:"created_by"`
-	CreatedAt   time.Time                   `json:"created_at" sql:"created_at"`
-	UpdatedBy   string                      `json:"updated_by" sql:"updated_by"`
-	UpdatedAt   time.Time                   `json:"updated_at" sql:"updated_at"`
+	ID          string                  `json:"id" sql:"id" pk:"true"`
+	Code        string                  `json:"code" sql:"code" updatable:"false"`
+	Type        string                  `json:"type" sql:"type" updatable:"false"`
+	Name        translation.Translation `json:"name" sql:"name" field:"jsonb"`
+	Description translation.Translation `json:"description" sql:"description" field:"jsonb"`
+	Definitions json.RawMessage         `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"`
+	Active      bool                    `json:"active" sql:"active"`
+	CreatedBy   string                  `json:"created_by" sql:"created_by"`
+	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
+	UpdatedBy   string                  `json:"updated_by" sql:"updated_by"`
+	UpdatedAt   time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
 func (l *Lookup) Load(lookupCode string) error {

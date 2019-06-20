@@ -20,8 +20,8 @@ type Lookup struct {
 	ID          string                   `json:"id" sql:"id" pk:"true"`
 	Code        string                   `json:"code" sql:"code" updatable:"false"`
 	Type        string                   `json:"type" sql:"type" updatable:"false"`
-	Name        mdlSharedModels.Translation `json:"name" sql:"name" field:"jsonb"`
-	Description mdlSharedModels.Translation `json:"description" sql:"description" field:"jsonb"`
+	Name        translation.Translation `json:"name" sql:"name" field:"jsonb"`
+	Description translation.Translation `json:"description" sql:"description" field:"jsonb"`
 	Definitions json.RawMessage          `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"`
 	Active      bool                     `json:"active" sql:"active"`
 	CreatedBy   string                   `json:"created_by" sql:"created_by"`
@@ -114,7 +114,7 @@ func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 		}
 		return json.Unmarshal(jsonBytes, &l.Definitions)
 	case shared.LookupStatic:
-		mdlSharedModels.TranslationFieldsRequestLanguageCode = languageCode
+		translation.FieldsRequestLanguageCode = languageCode
 		staticDef := LookupStaticDefinition{}
 		err := json.Unmarshal(l.Definitions, &staticDef)
 		if err != nil {
@@ -130,7 +130,7 @@ func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 			option.UpdatedAt = l.UpdatedAt
 			staticDef.Options[code] = option
 		}
-		mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+		translation.FieldsRequestLanguageCode = "all"
 		jsonBytes, err := json.Marshal(staticDef)
 		if err != nil {
 			return err
@@ -289,7 +289,7 @@ func (d *LookupDynamicDefinition) ParseQuery(languageCode string) error {
 type LookupParam struct {
 	Code     string                   `json:"code"`
 	DataType string                   `json:"data_type"`
-	Label    mdlSharedModels.Translation `json:"label"`
+	Label    translation.Translation `json:"label"`
 	Type     string                   `json:"field_type,omitempty"`
 	Pattern  string                   `json:"pattern,omitempty"`
 	Security LookupSecurity           `json:"security,omitempty"`
@@ -311,7 +311,7 @@ type LookupStaticDefinition struct {
 // LookupOption defines the struct of a static option
 type LookupOption struct {
 	Code      string                   `json:"code"`
-	Label     mdlSharedModels.Translation `json:"label,omitempty"`
+	Label     translation.Translation `json:"label,omitempty"`
 	Active    bool                     `json:"active"`
 	CreatedBy string                   `json:"created_by"`
 	CreatedAt time.Time                `json:"created_at"`

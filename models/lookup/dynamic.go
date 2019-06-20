@@ -5,7 +5,7 @@ import (
 	"time"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 )
 
 // DynamicDefinition define specific fields for the lookup definition
@@ -21,12 +21,12 @@ type DynamicDefinition struct {
 
 // Param defines the struct of a dynamic filter param
 type Param struct {
-	Code     string                   `json:"code"`
-	DataType string                   `json:"data_type"`
-	Label    mdlSharedModels.Translation `json:"label"`
-	Type     string                   `json:"field_type,omitempty"`
-	Pattern  string                   `json:"pattern,omitempty"`
-	Security Security                 `json:"security,omitempty"`
+	Code     string                  `json:"code"`
+	DataType string                  `json:"data_type"`
+	Label    translation.Translation `json:"label"`
+	Type     string                  `json:"field_type,omitempty"`
+	Pattern  string                  `json:"pattern,omitempty"`
+	Security Security                `json:"security,omitempty"`
 }
 
 // Security defines the fields to set security to a field

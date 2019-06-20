@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 )
 
 // DateDefinition defines custom attributes for the date type
 type DateDefinition struct {
-	Display string                   `json:"display" validate:"required"` // date, date_time
-	Format  mdlSharedModels.Translation `json:"format"`
+	Display string                  `json:"display" validate:"required"` // date, date_time
+	Format  translation.Translation `json:"format"`
 }
 
 func (d *DateDefinition) load(payload json.RawMessage) error {

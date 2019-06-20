@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/util"
 
 	"github.com/agile-work/srv-mdl-core/models/group"
@@ -10,13 +11,12 @@ import (
 	"github.com/go-chi/chi"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // PostGroup sends the request to model creating a new group
 func PostGroup(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	group := &group.Group{}
 	response := mdlShared.NewResponse()
 
@@ -33,7 +33,7 @@ func PostGroup(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = "all"
+	translation.FieldsRequestLanguageCode = "all"
 	if err := group.Create(trs); err != nil {
 		trs.Rollback()
 		response.NewError(http.StatusInternalServerError, "PostGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
@@ -48,7 +48,7 @@ func PostGroup(res http.ResponseWriter, req *http.Request) {
 
 // GetAllGroups return all group instances from the model
 func GetAllGroups(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -76,7 +76,7 @@ func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 
 // GetGroup return only one group from the model
 func GetGroup(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	response := mdlShared.NewResponse()
 
 	trs, err := db.NewTransaction()
@@ -100,7 +100,7 @@ func GetGroup(res http.ResponseWriter, req *http.Request) {
 
 // UpdateGroup sends the request to model updating a group
 func UpdateGroup(res http.ResponseWriter, req *http.Request) {
-	mdlSharedModels.TranslationFieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	group := &group.Group{}
 	response := mdlShared.NewResponse()
 
@@ -112,7 +112,7 @@ func UpdateGroup(res http.ResponseWriter, req *http.Request) {
 
 	group.Code = chi.URLParam(req, "group_code")
 
-	body, err := util.GetBody(req)
+	body, err := util.GetBodyMap(req)
 	if err != nil {
 		response.NewError(http.StatusInternalServerError, "UpdateGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
 		response.Render(res, req)

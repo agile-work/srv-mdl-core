@@ -5,9 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/agile-work/srv-mdl-shared/models/translation"
+
 	"github.com/agile-work/srv-mdl-core/models/lookup"
 	mdlShared "github.com/agile-work/srv-mdl-shared"
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -20,20 +21,20 @@ type Definition interface {
 
 // Field defines the struct of this object
 type Field struct {
-	ID           string                      `json:"id" sql:"id" pk:"true"`
-	Code         string                      `json:"code" sql:"code" updatable:"false" validate:"required"`
-	SchemaCode   string                      `json:"schema_code" sql:"schema_code" updatable:"false"`
-	Type         string                      `json:"field_type" sql:"field_type" updatable:"false" validate:"required"`
-	Name         mdlSharedModels.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
-	Description  mdlSharedModels.Translation `json:"description" sql:"description" field:"jsonb"`
-	DefaultValue json.RawMessage             `json:"default_value" sql:"default_value" field:"jsonb"`
-	Definitions  json.RawMessage             `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false" validate:"required"`
-	Validations  json.RawMessage             `json:"validations" sql:"validations" field:"jsonb" updatable:"false"`
-	Active       bool                        `json:"active" sql:"active"`
-	CreatedBy    string                      `json:"created_by" sql:"created_by"`
-	CreatedAt    time.Time                   `json:"created_at" sql:"created_at"`
-	UpdatedBy    string                      `json:"updated_by" sql:"updated_by"`
-	UpdatedAt    time.Time                   `json:"updated_at" sql:"updated_at"`
+	ID           string                  `json:"id" sql:"id" pk:"true"`
+	Code         string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	SchemaCode   string                  `json:"schema_code" sql:"schema_code" updatable:"false"`
+	Type         string                  `json:"field_type" sql:"field_type" updatable:"false" validate:"required"`
+	Name         translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
+	Description  translation.Translation `json:"description" sql:"description" field:"jsonb"`
+	DefaultValue json.RawMessage         `json:"default_value" sql:"default_value" field:"jsonb"`
+	Definitions  json.RawMessage         `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false" validate:"required"`
+	Validations  json.RawMessage         `json:"validations" sql:"validations" field:"jsonb" updatable:"false"`
+	Active       bool                    `json:"active" sql:"active"`
+	CreatedBy    string                  `json:"created_by" sql:"created_by"`
+	CreatedAt    time.Time               `json:"created_at" sql:"created_at"`
+	UpdatedBy    string                  `json:"updated_by" sql:"updated_by"`
+	UpdatedAt    time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
 // Fields defines the array struct of this object
@@ -123,7 +124,7 @@ func (f *Field) Update(trs *db.Transaction, columns []string, translations map[s
 	if len(translations) > 0 {
 		statement := builder.Update(constants.TableCoreSchemaFields)
 		for col, val := range translations {
-			statement.JSON(col, mdlSharedModels.TranslationFieldsRequestLanguageCode)
+			statement.JSON(col, translation.FieldsRequestLanguageCode)
 			jsonVal, _ := json.Marshal(val)
 			statement.Values(jsonVal)
 		}
