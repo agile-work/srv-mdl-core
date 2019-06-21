@@ -2,12 +2,13 @@ package group
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
+	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -73,7 +74,7 @@ type Groups []Group
 func (g *Group) Create(trs *db.Transaction, columns ...string) error {
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreGroups, g, columns...)
 	if err != nil {
-		return mdlShared.NewError("group create", err.Error())
+		return customerror.New(http.StatusInternalServerError, "group create", err.Error())
 	}
 	g.ID = id
 
@@ -83,7 +84,7 @@ func (g *Group) Create(trs *db.Transaction, columns ...string) error {
 // LoadAll defines all instances from the object
 func (g *Groups) LoadAll(trs *db.Transaction, opt *db.Options) error {
 	if err := db.SelectStructTx(trs.Tx, constants.TableCoreGroups, g, opt); err != nil {
-		return mdlShared.NewError("groups load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "groups load", err.Error())
 	}
 	return nil
 }
@@ -93,7 +94,7 @@ func (g *Group) Load(trs *db.Transaction) error {
 	if err := db.SelectStructTx(trs.Tx, constants.TableCoreGroups, g, &db.Options{
 		Conditions: builder.Equal("code", g.Code),
 	}); err != nil {
-		return mdlShared.NewError("group load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "group load", err.Error())
 	}
 	return nil
 }
@@ -104,7 +105,7 @@ func (g *Group) Update(trs *db.Transaction, columns []string, translations map[s
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreGroups, g, opt, strings.Join(columns, ",")); err != nil {
-			return mdlShared.NewError("group update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "group update", err.Error())
 		}
 	}
 
@@ -117,7 +118,7 @@ func (g *Group) Update(trs *db.Transaction, columns []string, translations map[s
 		}
 		statement.Where(opt.Conditions)
 		if _, err := trs.Query(statement); err != nil {
-			return mdlShared.NewError("group update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "group update", err.Error())
 		}
 	}
 
@@ -129,7 +130,7 @@ func (g *Group) Delete(trs *db.Transaction) error {
 	if err := db.DeleteStructTx(trs.Tx, constants.TableCoreGroups, &db.Options{
 		Conditions: builder.Equal("code", g.Code),
 	}); err != nil {
-		return mdlShared.NewError("group delete", err.Error())
+		return customerror.New(http.StatusInternalServerError, "group delete", err.Error())
 	}
 	return nil
 }
@@ -200,7 +201,7 @@ func (g *Group) Delete(trs *db.Transaction) error {
 
 // 	idColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
 // 	sql.InsertStructToJSON("permissions", shared.TableCoreGroups, &permission, builder.Equal(idColumn, groupID))
-// 	response.Data = permission
+// 	resp.Data = permission
 // 	return response
 // }
 

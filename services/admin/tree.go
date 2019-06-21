@@ -190,7 +190,7 @@ package admin
 
 // 	idColumn := fmt.Sprintf("%s.id", shared.TableCoreTreeUnits)
 // 	sql.InsertStructToJSON("permissions", shared.TableCoreTreeUnits, &permission, builder.Equal(idColumn, treeUnitID))
-// 	response.Data = permission
+// 	resp.Data = permission
 // 	return response
 // }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
-	sql "github.com/agile-work/srv-shared/sql-builder/db"
+	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 type Definition interface {
@@ -33,7 +33,7 @@ type Lookup struct {
 
 func (l *Lookup) Load(lookupCode string) error {
 	lookupCodeColumn := fmt.Sprintf("%s.code", constants.TableCoreLookups)
-	if err := sql.SelectStruct(constants.TableCoreLookups, l, &sql.Options{Conditions: builder.Equal(lookupCodeColumn, lookupCode)}); err != nil {
+	if err := db.SelectStruct(constants.TableCoreLookups, l, &db.Options{Conditions: builder.Equal(lookupCodeColumn, lookupCode)}); err != nil {
 		return err
 	}
 	return nil

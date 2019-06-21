@@ -3,12 +3,27 @@ package auth
 import (
 	"net/http"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models/response"
+	"github.com/agile-work/srv-mdl-shared/models/user"
 )
 
 // Login endpoint to get user credentials and return token
 func Login(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	user := &user.User{}
+	resp := response.New()
 
-	response.Render(res, req)
+	if err := resp.Parse(req, user); err != nil {
+		resp.NewError("Login response load", err)
+		resp.Render(res, req)
+		return
+	}
+
+	if err := user.Login(); err != nil {
+		resp.NewError("Login", err)
+		resp.Render(res, req)
+		return
+	}
+
+	resp.Data = user
+	resp.Render(res, req)
 }

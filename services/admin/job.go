@@ -179,7 +179,7 @@ package admin
 
 // 	jobIDColumn := fmt.Sprintf("%s.id", shared.TableCoreJobs)
 // 	sql.InsertStructToJSON("followers", shared.TableCoreJobs, &follower, builder.Equal(jobIDColumn, jobID))
-// 	response.Data = follower
+// 	resp.Data = follower
 // 	return response
 // }
 

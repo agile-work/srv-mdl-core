@@ -2,10 +2,11 @@ package schema
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/job"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
@@ -55,7 +56,7 @@ func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 	s.Status = constants.SchemaStatusProcessing
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreSchemas, s, columns...)
 	if err != nil {
-		return mdlShared.NewError("schema create", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schema create", err.Error())
 	}
 	s.ID = id
 	params := map[string]interface{}{
@@ -64,12 +65,12 @@ func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 
 	id, err = job.CreateInstance(s.CreatedBy, constants.JobSystemCreateSchema, params)
 	if err != nil {
-		return mdlShared.NewError("schema create job execution", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schema create job execution", err.Error())
 	}
 
 	s.JobID = id
 	if err := s.Update(trs, []string{"job_id"}, nil); err != nil {
-		return mdlShared.NewError("schema create update job id", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schema create update job id", err.Error())
 	}
 
 	return nil
@@ -78,7 +79,7 @@ func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 // LoadAll defines all instances from the object
 func (s *Schemas) LoadAll(trs *db.Transaction, opt *db.Options) error {
 	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemas, s, opt); err != nil {
-		return mdlShared.NewError("schemas load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schemas load", err.Error())
 	}
 	return nil
 }
@@ -88,7 +89,7 @@ func (s *Schema) Load(trs *db.Transaction) error {
 	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemas, s, &db.Options{
 		Conditions: builder.Equal("code", s.Code),
 	}); err != nil {
-		return mdlShared.NewError("schema load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schema load", err.Error())
 	}
 	return nil
 }
@@ -99,7 +100,7 @@ func (s *Schema) Update(trs *db.Transaction, columns []string, translations map[
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreSchemas, s, opt, strings.Join(columns, ",")); err != nil {
-			return mdlShared.NewError("schema update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "schema update", err.Error())
 		}
 	}
 
@@ -112,7 +113,7 @@ func (s *Schema) Update(trs *db.Transaction, columns []string, translations map[
 		}
 		statement.Where(opt.Conditions)
 		if _, err := trs.Query(statement); err != nil {
-			return mdlShared.NewError("schema update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "schema update", err.Error())
 		}
 	}
 
@@ -124,7 +125,7 @@ func (s *Schema) Delete(trs *db.Transaction) error {
 	if err := db.DeleteStructTx(trs.Tx, constants.TableCoreSchemas, &db.Options{
 		Conditions: builder.Equal("code", s.Code),
 	}); err != nil {
-		return mdlShared.NewError("schema delete", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schema delete", err.Error())
 	}
 	return nil
 }
@@ -135,7 +136,7 @@ func (s *Schema) CallDelete(trs *db.Transaction) error {
 	s.Active = false
 
 	if err := s.Update(trs, []string{"status", "active"}, nil); err != nil {
-		return mdlShared.NewError("schema delete update status", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schema delete update status", err.Error())
 	}
 
 	params := map[string]interface{}{
@@ -143,7 +144,7 @@ func (s *Schema) CallDelete(trs *db.Transaction) error {
 	}
 
 	if _, err := job.CreateInstance(s.UpdatedBy, constants.JobSystemDeleteSchema, params); err != nil {
-		return mdlShared.NewError("schema delete job execution", err.Error())
+		return customerror.New(http.StatusInternalServerError, "schema delete job execution", err.Error())
 	}
 
 	return nil

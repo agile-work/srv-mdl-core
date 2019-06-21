@@ -2,13 +2,14 @@ package field
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
+	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 
 	"github.com/agile-work/srv-mdl-core/models/lookup"
-	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -44,7 +45,7 @@ type Fields []Field
 func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 	def, err := f.GetDefinition()
 	if err != nil {
-		return mdlShared.NewError("field processing definitions", err.Error())
+		return customerror.New(http.StatusInternalServerError, "field processing definitions", err.Error())
 	}
 
 	if f.Type == constants.FieldLookup {
@@ -52,20 +53,20 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 		lkp := lookup.Lookup{}
 		err := lkp.Load(fldLkpDef.LookupCode)
 		if err != nil {
-			return mdlShared.NewError("lookup load", err.Error())
+			return customerror.New(http.StatusInternalServerError, "lookup load", err.Error())
 		}
 		if !lkp.Active {
-			return mdlShared.NewError("lookup load", "invalid lookup code")
+			return customerror.New(http.StatusInternalServerError, "lookup load", "invalid lookup code")
 		}
 
 		lkpDef, err := lkp.GetDefinition()
 		if err != nil {
-			return mdlShared.NewError("lookup get definition", err.Error())
+			return customerror.New(http.StatusInternalServerError, "lookup get definition", err.Error())
 		}
 
 		fldLkpDef.LookupValue, fldLkpDef.LookupLabel = lkpDef.GetValueAndLabel()
 		if err != nil {
-			return mdlShared.NewError("lookup get value and label", err.Error())
+			return customerror.New(http.StatusInternalServerError, "lookup get value and label", err.Error())
 		}
 
 		if fldLkpDef.Type != constants.FieldLookupStatic {
@@ -83,7 +84,7 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 	f.SetDefinition(def)
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreSchemaFields, f, columns...)
 	if err != nil {
-		return mdlShared.NewError("field create", err.Error())
+		return customerror.New(http.StatusInternalServerError, "field create", err.Error())
 	}
 	f.ID = id
 	return nil
@@ -92,7 +93,7 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 // LoadAll defines all instances from the object
 func (f *Fields) LoadAll(trs *db.Transaction, opt *db.Options) error {
 	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemaFields, f, opt); err != nil {
-		return mdlShared.NewError("fields load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "fields load", err.Error())
 	}
 	return nil
 }
@@ -103,7 +104,7 @@ func (f *Field) Load(trs *db.Transaction) error {
 		builder.Equal("code", f.Code),
 		builder.Equal("schema_code", f.SchemaCode),
 	)}); err != nil {
-		return mdlShared.NewError("field load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "field load", err.Error())
 	}
 	return nil
 }
@@ -117,7 +118,7 @@ func (f *Field) Update(trs *db.Transaction, columns []string, translations map[s
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreSchemaFields, f, opt, strings.Join(columns, ",")); err != nil {
-			return mdlShared.NewError("field update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "field update", err.Error())
 		}
 	}
 
@@ -130,7 +131,7 @@ func (f *Field) Update(trs *db.Transaction, columns []string, translations map[s
 		}
 		statement.Where(opt.Conditions)
 		if _, err := trs.Query(statement); err != nil {
-			return mdlShared.NewError("field update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "field update", err.Error())
 		}
 	}
 
@@ -143,7 +144,7 @@ func (f *Field) Delete(trs *db.Transaction) error {
 		builder.Equal("code", f.Code),
 		builder.Equal("schema_code", f.SchemaCode),
 	)}); err != nil {
-		return mdlShared.NewError("field delete", err.Error())
+		return customerror.New(http.StatusInternalServerError, "field delete", err.Error())
 	}
 	return nil
 }
@@ -193,6 +194,6 @@ func (f *Field) GetDefinition() (Definition, error) {
 		err := def.load(f.Definitions)
 		return def, err
 	default:
-		return nil, mdlShared.NewError("field get definition", "invalid field type")
+		return nil, customerror.New(http.StatusInternalServerError, "field get definition", "invalid field type")
 	}
 }

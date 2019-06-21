@@ -3,7 +3,7 @@ package admin
 import (
 	"net/http"
 
-	"github.com/agile-work/srv-shared/util"
+	"github.com/agile-work/srv-mdl-shared/util"
 
 	"github.com/agile-work/srv-mdl-shared/models/response"
 	"github.com/agile-work/srv-mdl-shared/models/user"
@@ -16,31 +16,31 @@ import (
 // PostUser sends the request to model creating a new user
 func PostUser(res http.ResponseWriter, req *http.Request) {
 	user := &user.User{}
-	response := response.New()
+	resp := response.New()
 
-	if err := response.Load(req, user); err != nil {
-		response.NewError("PostUser response load", err)
-		response.Render(res, req)
+	if err := resp.Parse(req, user); err != nil {
+		resp.NewError("PostUser response load", err)
+		resp.Render(res, req)
 		return
 	}
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError("PostUser user new transaction", err)
-		response.Render(res, req)
+		resp.NewError("PostUser user new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	if err := user.Create(trs); err != nil {
 		trs.Rollback()
-		response.NewError("PostUser", err)
-		response.Render(res, req)
+		resp.NewError("PostUser", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
 
-	response.Data = user
-	response.Render(res, req)
+	resp.Data = user
+	resp.Render(res, req)
 }
 
 // GetAllUsers return all user instances from the model

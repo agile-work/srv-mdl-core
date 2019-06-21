@@ -3,16 +3,16 @@ package admin
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/models/response"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 
-	"github.com/agile-work/srv-shared/util"
+	"github.com/agile-work/srv-mdl-shared/util"
 
 	"github.com/agile-work/srv-mdl-core/models/field"
 
 	"github.com/go-chi/chi"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
@@ -20,11 +20,11 @@ import (
 func PostField(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	field := &field.Field{}
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	if err := response.Load(req, field); err != nil {
-		response.NewError(http.StatusInternalServerError, "PostField response load", err.Error())
-		response.Render(res, req)
+	if err := resp.Parse(req, field); err != nil {
+		resp.NewError("PostField response load", err)
+		resp.Render(res, req)
 		return
 	}
 
@@ -32,86 +32,86 @@ func PostField(res http.ResponseWriter, req *http.Request) {
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "PostField field new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("PostField field new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	translation.FieldsRequestLanguageCode = "all"
 	if err := field.Create(trs); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "PostField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("PostField", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
 
-	response.Data = field
-	response.Render(res, req)
+	resp.Data = field
+	resp.Render(res, req)
 }
 
 // GetAllFields return all field instances from the model
 func GetAllFields(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "GetAllFields field new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("GetAllFields field new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
-	metaData := mdlShared.Metadata{}
+	metaData := response.Metadata{}
 	metaData.Load(req)
 	opt := metaData.GenerateDBOptions()
 	opt.AddCondition(builder.Equal("schema_code", chi.URLParam(req, "schema_code")))
 	fields := &field.Fields{}
 	if err := fields.LoadAll(trs, opt); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "GetAllFields "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("GetAllFields", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Data = fields
-	response.Metadata = metaData
-	response.Render(res, req)
+	resp.Data = fields
+	resp.Metadata = metaData
+	resp.Render(res, req)
 }
 
 // GetField return only one field from the model
 func GetField(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "GetField field new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("GetField field new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	field := &field.Field{SchemaCode: chi.URLParam(req, "schema_code"), Code: chi.URLParam(req, "field_code")}
 	if err := field.Load(trs); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "GetField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("GetField", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Data = field
-	response.Render(res, req)
+	resp.Data = field
+	resp.Render(res, req)
 }
 
 // UpdateField sends the request to model updating a field
 func UpdateField(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	field := &field.Field{}
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	if err := response.Load(req, field); err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateField field new transaction", err.Error())
-		response.Render(res, req)
+	if err := resp.Parse(req, field); err != nil {
+		resp.NewError("UpdateField field new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
@@ -120,54 +120,54 @@ func UpdateField(res http.ResponseWriter, req *http.Request) {
 
 	body, err := util.GetBodyMap(req)
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("UpdateField", err)
+		resp.Render(res, req)
 		return
 	}
 
 	columns, translations, err := util.GetColumnsFromBody(body, field)
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("UpdateField", err)
+		resp.Render(res, req)
 		return
 	}
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateField field new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("UpdateField field new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	if err := field.Update(trs, columns, translations); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "UpdateField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("UpdateField", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Data = field
-	response.Render(res, req)
+	resp.Data = field
+	resp.Render(res, req)
 }
 
 // DeleteField sends the request to model deleting a field
 func DeleteField(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "DeleteField field new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("DeleteField field new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	field := &field.Field{SchemaCode: chi.URLParam(req, "schema_code"), Code: chi.URLParam(req, "field_code")}
 	if err := field.Delete(trs); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "DeleteField "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("DeleteField", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Render(res, req)
+	resp.Render(res, req)
 }

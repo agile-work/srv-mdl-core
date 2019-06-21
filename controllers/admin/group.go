@@ -3,14 +3,14 @@ package admin
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/models/response"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
-	"github.com/agile-work/srv-shared/util"
+	"github.com/agile-work/srv-mdl-shared/util"
 
 	"github.com/agile-work/srv-mdl-core/models/group"
 
 	"github.com/go-chi/chi"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
@@ -18,95 +18,95 @@ import (
 func PostGroup(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	group := &group.Group{}
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	if err := response.Load(req, group); err != nil {
-		response.NewError(http.StatusInternalServerError, "PostGroup response load", err.Error())
-		response.Render(res, req)
+	if err := resp.Parse(req, group); err != nil {
+		resp.NewError("PostGroup response load", err)
+		resp.Render(res, req)
 		return
 	}
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "PostGroup group new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("PostGroup group new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	translation.FieldsRequestLanguageCode = "all"
 	if err := group.Create(trs); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "PostGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("PostGroup", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
 
-	response.Data = group
-	response.Render(res, req)
+	resp.Data = group
+	resp.Render(res, req)
 }
 
 // GetAllGroups return all group instances from the model
 func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "GetAllGroups group new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("GetAllGroups group new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
-	metaData := mdlShared.Metadata{}
+	metaData := response.Metadata{}
 	metaData.Load(req)
 	opt := metaData.GenerateDBOptions()
 	groups := &group.Groups{}
 	if err := groups.LoadAll(trs, opt); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "GetAllGroups "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("GetAllGroups", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Data = groups
-	response.Metadata = metaData
-	response.Render(res, req)
+	resp.Data = groups
+	resp.Metadata = metaData
+	resp.Render(res, req)
 }
 
 // GetGroup return only one group from the model
 func GetGroup(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "GetGroup group new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("GetGroup group new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	group := &group.Group{Code: chi.URLParam(req, "group_code")}
 	if err := group.Load(trs); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "GetGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("GetGroup", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Data = group
-	response.Render(res, req)
+	resp.Data = group
+	resp.Render(res, req)
 }
 
 // UpdateGroup sends the request to model updating a group
 func UpdateGroup(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	group := &group.Group{}
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	if err := response.Load(req, group); err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateGroup group new transaction", err.Error())
-		response.Render(res, req)
+	if err := resp.Parse(req, group); err != nil {
+		resp.NewError("UpdateGroup group new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
@@ -114,96 +114,96 @@ func UpdateGroup(res http.ResponseWriter, req *http.Request) {
 
 	body, err := util.GetBodyMap(req)
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("UpdateGroup", err)
+		resp.Render(res, req)
 		return
 	}
 
 	columns, translations, err := util.GetColumnsFromBody(body, group)
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("UpdateGroup", err)
+		resp.Render(res, req)
 		return
 	}
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "UpdateGroup group new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("UpdateGroup group new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	if err := group.Update(trs, columns, translations); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "UpdateGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("UpdateGroup", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Data = group
-	response.Render(res, req)
+	resp.Data = group
+	resp.Render(res, req)
 }
 
 // DeleteGroup sends the request to model deleting a group
 func DeleteGroup(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		response.NewError(http.StatusInternalServerError, "DeleteGroup group new transaction", err.Error())
-		response.Render(res, req)
+		resp.NewError("DeleteGroup group new transaction", err)
+		resp.Render(res, req)
 		return
 	}
 
 	group := &group.Group{Code: chi.URLParam(req, "group_code")}
 	if err := group.Delete(trs); err != nil {
 		trs.Rollback()
-		response.NewError(http.StatusInternalServerError, "DeleteGroup "+mdlShared.GetErrorStruct(err).Scope, mdlShared.GetErrorStruct(err).ErrorMessage)
-		response.Render(res, req)
+		resp.NewError("DeleteGroup", err)
+		resp.Render(res, req)
 		return
 	}
 	trs.Commit()
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // AddUserInGroup sends the request to service deleting an user
 func AddUserInGroup(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // DeleteGroupUser sends the request to service deleting a user from a group
 func DeleteGroupUser(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // GetAllGroupPermissions return all group instances from the service
 func GetAllGroupPermissions(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // PostGroupPermission sends the request to service creating a permission in a group
 func PostGroupPermission(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // DeleteGroupPermission sends the request to service deleting a permission from a group
 func DeleteGroupPermission(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // GetAllGroupsByUser sends the request to service deleting a permission from a group
 func GetAllGroupsByUser(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }

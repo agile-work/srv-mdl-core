@@ -2,10 +2,11 @@ package language
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 	"time"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -31,7 +32,7 @@ type Languages []Language
 func (l *Language) Create(trs *db.Transaction, columns ...string) error {
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreConfigLanguages, l, columns...)
 	if err != nil {
-		mdlShared.NewError("language create", err.Error())
+		customerror.New(http.StatusInternalServerError, "language create", err.Error())
 	}
 	l.ID = id
 	return nil
@@ -40,7 +41,7 @@ func (l *Language) Create(trs *db.Transaction, columns ...string) error {
 // LoadAll defines all instances from the object
 func (l *Languages) LoadAll(trs *db.Transaction, opt *db.Options) error {
 	if err := db.SelectStructTx(trs.Tx, constants.TableCoreConfigLanguages, l, opt); err != nil {
-		return mdlShared.NewError("languages load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "languages load", err.Error())
 	}
 	return nil
 }
@@ -50,7 +51,7 @@ func (l *Language) Load(trs *db.Transaction) error {
 	if err := db.SelectStructTx(trs.Tx, constants.TableCoreConfigLanguages, l, &db.Options{
 		Conditions: builder.Equal("code", l.Code),
 	}); err != nil {
-		return mdlShared.NewError("language load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "language load", err.Error())
 	}
 	return nil
 }
@@ -61,7 +62,7 @@ func (l *Language) Update(trs *db.Transaction, columns []string, translations ma
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreConfigLanguages, l, opt, strings.Join(columns, ",")); err != nil {
-			return mdlShared.NewError("language update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "language update", err.Error())
 		}
 	}
 
@@ -74,7 +75,7 @@ func (l *Language) Update(trs *db.Transaction, columns []string, translations ma
 		}
 		statement.Where(opt.Conditions)
 		if _, err := trs.Query(statement); err != nil {
-			return mdlShared.NewError("language update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "language update", err.Error())
 		}
 	}
 
@@ -89,7 +90,7 @@ func (l *Language) Delete(trs *db.Transaction) error {
 			builder.Equal("active", false),
 		),
 	}); err != nil {
-		return mdlShared.NewError("language delete", err.Error())
+		return customerror.New(http.StatusInternalServerError, "language delete", err.Error())
 	}
 	return nil
 }

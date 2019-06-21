@@ -43,7 +43,7 @@ package admin
 // 		return response
 // 	}
 // 	lookup.ID = id
-// 	response.Data = lookup
+// 	resp.Data = lookup
 // 	return response
 // }
 
@@ -60,7 +60,7 @@ package admin
 // 			return response
 // 		}
 // 	}
-// 	response.Data = lookups
+// 	resp.Data = lookups
 // 	return response
 // }
 
@@ -92,7 +92,7 @@ package admin
 // 		return response
 // 	}
 
-// 	response.Data = lookup
+// 	resp.Data = lookup
 // 	return response
 // }
 
@@ -164,7 +164,7 @@ package admin
 // 		return response
 // 	}
 
-// 	response.Data = option
+// 	resp.Data = option
 // 	return response
 // }
 
@@ -243,7 +243,7 @@ package admin
 // 	}
 
 // 	trs.Commit()
-// 	response.Data = option
+// 	resp.Data = option
 // 	return response
 // }
 
@@ -308,7 +308,7 @@ package admin
 
 // 	fmt.Println(sqlQuery)
 
-// 	response.Data = staticLookup
+// 	resp.Data = staticLookup
 
 // 	return response
 // }
@@ -434,7 +434,7 @@ package admin
 // 	}
 
 // 	translation.FieldsRequestLanguageCode = languageCode
-// 	response.Data = lookup
+// 	resp.Data = lookup
 
 // 	return response
 // }
@@ -502,7 +502,7 @@ package admin
 // 	}
 
 // 	trs.Commit()
-// 	response.Data = param
+// 	resp.Data = param
 // 	return response
 // }
 

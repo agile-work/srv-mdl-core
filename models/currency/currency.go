@@ -3,10 +3,11 @@ package currency
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -40,28 +41,28 @@ type Currencies []Currency
 func (c *Currency) Create(trs *db.Transaction, columns ...string) error {
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreCurrencies, c, columns...)
 	if err != nil {
-		return mdlShared.NewError("currency create", err.Error())
+		return customerror.New(http.StatusInternalServerError, "currency create", err.Error())
 	}
 	c.ID = id
 	return nil
 }
 
 // LoadAll defines all instances from the object
-func (c *Currencies) LoadAll(trs *db.Transaction, opt *db.Options) error {
+func (c *Currencies) LoadAll(opt *db.Options) error {
 	// TODO: Make a way of limit the columns for the get all. Passing fields to LoadStruct.
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreCurrencies, c, opt); err != nil {
-		return mdlShared.NewError("currencies load", err.Error())
+	if err := db.SelectStruct(constants.TableCoreCurrencies, c, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "currencies load", err.Error())
 	}
 	return nil
 }
 
 // Load defines only one object from the database
-func (c *Currency) Load(trs *db.Transaction) error {
+func (c *Currency) Load() error {
 	// TODO: Limit the total of rates to +/- 100 records if has no filter
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreCurrencies, c, &db.Options{
+	if err := db.SelectStruct(constants.TableCoreCurrencies, c, &db.Options{
 		Conditions: builder.Equal("code", c.Code),
 	}); err != nil {
-		return mdlShared.NewError("currency load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "currency load", err.Error())
 	}
 	return nil
 }
@@ -72,7 +73,7 @@ func (c *Currency) Update(trs *db.Transaction, columns []string, translations ma
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreCurrencies, c, opt, strings.Join(columns, ",")); err != nil {
-			return mdlShared.NewError("currency update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "currency update", err.Error())
 		}
 	}
 
@@ -85,7 +86,7 @@ func (c *Currency) Update(trs *db.Transaction, columns []string, translations ma
 		}
 		statement.Where(opt.Conditions)
 		if _, err := trs.Query(statement); err != nil {
-			return mdlShared.NewError("currency update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "currency update", err.Error())
 		}
 	}
 
@@ -100,7 +101,7 @@ func (c *Currency) Delete(trs *db.Transaction) error {
 			builder.Equal("active", false),
 		),
 	}); err != nil {
-		return mdlShared.NewError("currency delete", err.Error())
+		return customerror.New(http.StatusInternalServerError, "currency delete", err.Error())
 	}
 	return nil
 }
@@ -115,7 +116,7 @@ func (r *Rate) AddRate(trs *db.Transaction, fromCode, toCode string) error {
 			,true
 		) where code = '%s'`, constants.TableCoreCurrencies, toCode, toCode, time.Now().Format(time.RFC3339), fromCode)
 	if _, err := trs.Query(builder.Raw(querySQL)); err != nil {
-		return mdlShared.NewError("add currency rate", err.Error())
+		return customerror.New(http.StatusInternalServerError, "add currency rate", err.Error())
 	}
 
 	t := time.Now()
@@ -125,7 +126,7 @@ func (r *Rate) AddRate(trs *db.Transaction, fromCode, toCode string) error {
 		rates, '{%s,-1}', '%s', true) 
 		where code = '%s'`, constants.TableCoreCurrencies, toCode, string(rateBytes), fromCode)
 	if _, err := trs.Query(builder.Raw(querySQL)); err != nil {
-		return mdlShared.NewError("add currency rate", err.Error())
+		return customerror.New(http.StatusInternalServerError, "add currency rate", err.Error())
 	}
 	return nil
 }

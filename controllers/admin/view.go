@@ -3,40 +3,40 @@ package admin
 import (
 	"net/http"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models/response"
 )
 
 // PostView sends the request to model creating a new view
 func PostView(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // GetAllViews return all view instances from the model
 func GetAllViews(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // GetView return only one view from the model
 func GetView(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // UpdateView sends the request to model updating a view
 func UpdateView(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // DeleteView sends the request to model deleting a view
 func DeleteView(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }

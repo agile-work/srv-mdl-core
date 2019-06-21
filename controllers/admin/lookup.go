@@ -3,91 +3,91 @@ package admin
 import (
 	"net/http"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-mdl-shared/models/response"
 )
 
 // PostLookup sends the request to service creating a new lookup
 func PostLookup(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // GetAllLookups return all lookup instances from the service
 func GetAllLookups(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // GetLookup return only one lookup from the service
 func GetLookup(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // UpdateLookup sends the request to service updating a lookup
 func UpdateLookup(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // DeleteLookup sends the request to service deleting a lookup
 func DeleteLookup(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // AddLookupOption add a new option to a lookup
 func AddLookupOption(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // UpdateLookupOption change lookup option data
 func UpdateLookupOption(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // DeleteLookupOption delete an option
 func DeleteLookupOption(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // UpdateLookupOrder delete an option
 func UpdateLookupOrder(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // UpdateLookupQuery change dynamic lookup query
 func UpdateLookupQuery(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // UpdateLookupDynamicField change dynamic lookup field
 func UpdateLookupDynamicField(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // UpdateLookupDynamicParam change dynamic lookup param
 func UpdateLookupDynamicParam(res http.ResponseWriter, req *http.Request) {
-	response := mdlShared.NewResponse()
+	resp := response.New()
 
-	response.Render(res, req)
+	resp.Render(res, req)
 }
 
 // // PostLookup sends the request to service creating a new lookup
