@@ -9,30 +9,30 @@ import (
 	"strings"
 	"time"
 
-	mdlSharedModels "github.com/agile-work/srv-mdl-shared/models"
-	shared "github.com/agile-work/srv-shared"
+	"github.com/agile-work/srv-mdl-shared/models/translation"
+	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	sql "github.com/agile-work/srv-shared/sql-builder/db"
 )
 
 // Lookup defines the struct of this object
 type Lookup struct {
-	ID          string                   `json:"id" sql:"id" pk:"true"`
-	Code        string                   `json:"code" sql:"code" updatable:"false"`
-	Type        string                   `json:"type" sql:"type" updatable:"false"`
+	ID          string                  `json:"id" sql:"id" pk:"true"`
+	Code        string                  `json:"code" sql:"code" updatable:"false"`
+	Type        string                  `json:"type" sql:"type" updatable:"false"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb"`
-	Definitions json.RawMessage          `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"`
-	Active      bool                     `json:"active" sql:"active"`
-	CreatedBy   string                   `json:"created_by" sql:"created_by"`
-	CreatedAt   time.Time                `json:"created_at" sql:"created_at"`
-	UpdatedBy   string                   `json:"updated_by" sql:"updated_by"`
-	UpdatedAt   time.Time                `json:"updated_at" sql:"updated_at"`
+	Definitions json.RawMessage         `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"`
+	Active      bool                    `json:"active" sql:"active"`
+	CreatedBy   string                  `json:"created_by" sql:"created_by"`
+	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
+	UpdatedBy   string                  `json:"updated_by" sql:"updated_by"`
+	UpdatedAt   time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
 // GetDynamicDefinition returns the specific definition for a dynamic lookup
 func (l *Lookup) GetDynamicDefinition() (*LookupDynamicDefinition, error) {
-	if l.Type != shared.LookupDynamic {
+	if l.Type != constants.LookupDynamic {
 		return nil, errors.New("invalid lookup type")
 	}
 	def := &LookupDynamicDefinition{}
@@ -45,7 +45,7 @@ func (l *Lookup) GetDynamicDefinition() (*LookupDynamicDefinition, error) {
 
 // GetStaticDefinition returns the specific definition for a static lookup
 func (l *Lookup) GetStaticDefinition() (*LookupStaticDefinition, error) {
-	if l.Type != shared.LookupStatic {
+	if l.Type != constants.LookupStatic {
 		return nil, errors.New("invalid lookup type")
 	}
 	def := &LookupStaticDefinition{}
@@ -62,13 +62,13 @@ func (l *Lookup) ParseDefinition() error {
 	invalidType := false
 
 	switch l.Type {
-	case shared.LookupDynamic:
+	case constants.LookupDynamic:
 		def = &LookupDynamicDefinition{}
 		err := json.Unmarshal(l.Definitions, def)
 		if err != nil {
 			return err
 		}
-	case shared.LookupStatic:
+	case constants.LookupStatic:
 		def = &LookupStaticDefinition{}
 		err := json.Unmarshal(l.Definitions, def)
 		if err != nil {
@@ -92,7 +92,7 @@ func (l *Lookup) ParseDefinition() error {
 // ProcessDefinitions parse generic definition to a specific type processing necessary fields
 func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 	switch l.Type {
-	case shared.LookupDynamic:
+	case constants.LookupDynamic:
 		dynamicDef := &LookupDynamicDefinition{}
 		if method == http.MethodPost {
 			dynamicDef.CreatedBy = l.CreatedBy
@@ -113,7 +113,7 @@ func (l *Lookup) ProcessDefinitions(languageCode, method string) error {
 			return err
 		}
 		return json.Unmarshal(jsonBytes, &l.Definitions)
-	case shared.LookupStatic:
+	case constants.LookupStatic:
 		translation.FieldsRequestLanguageCode = languageCode
 		staticDef := LookupStaticDefinition{}
 		err := json.Unmarshal(l.Definitions, &staticDef)
@@ -233,13 +233,13 @@ func (d *LookupDynamicDefinition) ParseQuery(languageCode string) error {
 
 		replaceParam := ""
 		switch param.DataType {
-		case shared.SQLDataTypeText:
+		case constants.SQLDataTypeText:
 			replaceParam = "''"
-		case shared.SQLDataTypeDate:
+		case constants.SQLDataTypeDate:
 			replaceParam = "current_date"
-		case shared.SQLDataTypeNumber:
+		case constants.SQLDataTypeNumber:
 			replaceParam = "0"
-		case shared.SQLDataTypeBool:
+		case constants.SQLDataTypeBool:
 			replaceParam = "true"
 		}
 		parsedQuery = strings.Replace(parsedQuery, p, replaceParam, -1)
@@ -287,12 +287,12 @@ func (d *LookupDynamicDefinition) ParseQuery(languageCode string) error {
 
 // LookupParam defines the struct of a dynamic filter param
 type LookupParam struct {
-	Code     string                   `json:"code"`
-	DataType string                   `json:"data_type"`
+	Code     string                  `json:"code"`
+	DataType string                  `json:"data_type"`
 	Label    translation.Translation `json:"label"`
-	Type     string                   `json:"field_type,omitempty"`
-	Pattern  string                   `json:"pattern,omitempty"`
-	Security LookupSecurity           `json:"security,omitempty"`
+	Type     string                  `json:"field_type,omitempty"`
+	Pattern  string                  `json:"pattern,omitempty"`
+	Security LookupSecurity          `json:"security,omitempty"`
 }
 
 // LookupSecurity defines the fields to set security to a field
@@ -310,28 +310,28 @@ type LookupStaticDefinition struct {
 
 // LookupOption defines the struct of a static option
 type LookupOption struct {
-	Code      string                   `json:"code"`
+	Code      string                  `json:"code"`
 	Label     translation.Translation `json:"label,omitempty"`
-	Active    bool                     `json:"active"`
-	CreatedBy string                   `json:"created_by"`
-	CreatedAt time.Time                `json:"created_at"`
-	UpdatedBy string                   `json:"updated_by"`
-	UpdatedAt time.Time                `json:"updated_at"`
+	Active    bool                    `json:"active"`
+	CreatedBy string                  `json:"created_by"`
+	CreatedAt time.Time               `json:"created_at"`
+	UpdatedBy string                  `json:"updated_by"`
+	UpdatedAt time.Time               `json:"updated_at"`
 }
 
 func parseSQLType(sqlType string) string {
 	if strings.Contains(sqlType, "timestamp") {
-		return shared.SQLDataTypeDate
+		return constants.SQLDataTypeDate
 	}
 	switch sqlType {
 	case "character varying":
-		return shared.SQLDataTypeText
+		return constants.SQLDataTypeText
 	case "integer", "numeric":
-		return shared.SQLDataTypeNumber
+		return constants.SQLDataTypeNumber
 	case "boolean":
-		return shared.SQLDataTypeBool
+		return constants.SQLDataTypeBool
 	default:
-		return shared.SQLDataTypeText
+		return constants.SQLDataTypeText
 	}
 }
 
@@ -360,13 +360,13 @@ func paramCodeExists(params []LookupParam, code string) bool {
 func (l *Lookup) GetInstances() ([]map[string]interface{}, error) {
 	results := []map[string]interface{}{}
 	switch l.Type {
-	case shared.LookupStatic:
+	case constants.LookupStatic:
 		staticDefinition, err := l.GetStaticDefinition()
 		if err != nil {
 			return nil, err
 		}
 		results = staticDefinition.getInstances()
-	case shared.LookupDynamic:
+	case constants.LookupDynamic:
 		dynamicDefinition, err := l.GetDynamicDefinition()
 		if err != nil {
 			return nil, err
