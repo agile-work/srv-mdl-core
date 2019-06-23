@@ -40,10 +40,3 @@ func DeleteSchemaInstance(res http.ResponseWriter, req *http.Request) {
 
 	resp.Render(res, req)
 }
-
-// GetLookupInstance return all schema instances from the service
-func GetLookupInstance(res http.ResponseWriter, req *http.Request) {
-	resp := response.New()
-
-	resp.Render(res, req)
-}

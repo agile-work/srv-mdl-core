@@ -58,9 +58,13 @@ func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	metaData := response.Metadata{}
-	metaData.Load(req)
-	opt := metaData.GenerateDBOptions()
+	metadata := response.Metadata{}
+	if err := metadata.Load(req); err != nil {
+		resp.NewError("GetLookupInstance metadata parse", err)
+		resp.Render(res, req)
+		return
+	}
+	opt := metadata.GenerateDBOptions()
 	groups := &group.Groups{}
 	if err := groups.LoadAll(trs, opt); err != nil {
 		trs.Rollback()
@@ -70,7 +74,7 @@ func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 	}
 	trs.Commit()
 	resp.Data = groups
-	resp.Metadata = metaData
+	resp.Metadata = metadata
 	resp.Render(res, req)
 }
 
@@ -119,12 +123,7 @@ func UpdateGroup(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	columns, translations, err := util.GetColumnsFromBody(body, group)
-	if err != nil {
-		resp.NewError("UpdateGroup", err)
-		resp.Render(res, req)
-		return
-	}
+	columns, translations := util.GetColumnsFromBody(body, group)
 
 	trs, err := db.NewTransaction()
 	if err != nil {

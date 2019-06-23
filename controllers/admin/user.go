@@ -48,7 +48,11 @@ func GetAllUsers(res http.ResponseWriter, req *http.Request) {
 	resp := response.New()
 
 	metadata := response.Metadata{}
-	metadata.Load(req)
+	if err := metadata.Load(req); err != nil {
+		resp.NewError("GetLookupInstance metadata parse", err)
+		resp.Render(res, req)
+		return
+	}
 	opt := metadata.GenerateDBOptions()
 	users := &user.Users{}
 	if err := users.LoadAll(opt); err != nil {

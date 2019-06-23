@@ -52,9 +52,13 @@ func GetAllCurrencies(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	metaData := response.Metadata{}
-	metaData.Load(req)
-	opt := metaData.GenerateDBOptions()
+	metadata := response.Metadata{}
+	if err := metadata.Load(req); err != nil {
+		resp.NewError("GetLookupInstance metadata parse", err)
+		resp.Render(res, req)
+		return
+	}
+	opt := metadata.GenerateDBOptions()
 	currencies := &currency.Currencies{}
 	if err := currencies.LoadAll(opt); err != nil {
 		resp.NewError("GetAllCurrencies", err)
@@ -62,7 +66,7 @@ func GetAllCurrencies(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	resp.Data = currencies
-	resp.Metadata = metaData
+	resp.Metadata = metadata
 	resp.Render(res, req)
 }
 
@@ -102,12 +106,7 @@ func UpdateCurrency(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	columns, translations, err := util.GetColumnsFromBody(body, currency)
-	if err != nil {
-		resp.NewError("UpdateCurrency currency get columns", err)
-		resp.Render(res, req)
-		return
-	}
+	columns, translations := util.GetColumnsFromBody(body, currency)
 
 	trs, err := db.NewTransaction()
 	if err != nil {

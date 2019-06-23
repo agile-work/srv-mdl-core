@@ -58,9 +58,13 @@ func GetAllSchemas(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	metaData := response.Metadata{}
-	metaData.Load(req)
-	opt := metaData.GenerateDBOptions()
+	metadata := response.Metadata{}
+	if err := metadata.Load(req); err != nil {
+		resp.NewError("GetLookupInstance metadata parse", err)
+		resp.Render(res, req)
+		return
+	}
+	opt := metadata.GenerateDBOptions()
 	schemas := &schema.Schemas{}
 	if err := schemas.LoadAll(trs, opt); err != nil {
 		trs.Rollback()
@@ -70,7 +74,7 @@ func GetAllSchemas(res http.ResponseWriter, req *http.Request) {
 	}
 	trs.Commit()
 	resp.Data = schemas
-	resp.Metadata = metaData
+	resp.Metadata = metadata
 	resp.Render(res, req)
 }
 
@@ -119,12 +123,7 @@ func UpdateSchema(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	columns, translations, err := util.GetColumnsFromBody(body, schema)
-	if err != nil {
-		resp.NewError("UpdateSchema", err)
-		resp.Render(res, req)
-		return
-	}
+	columns, translations := util.GetColumnsFromBody(body, schema)
 
 	trs, err := db.NewTransaction()
 	if err != nil {

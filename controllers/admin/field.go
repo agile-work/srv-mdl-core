@@ -62,9 +62,13 @@ func GetAllFields(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	metaData := response.Metadata{}
-	metaData.Load(req)
-	opt := metaData.GenerateDBOptions()
+	metadata := response.Metadata{}
+	if err := metadata.Load(req); err != nil {
+		resp.NewError("GetLookupInstance metadata parse", err)
+		resp.Render(res, req)
+		return
+	}
+	opt := metadata.GenerateDBOptions()
 	opt.AddCondition(builder.Equal("schema_code", chi.URLParam(req, "schema_code")))
 	fields := &field.Fields{}
 	if err := fields.LoadAll(trs, opt); err != nil {
@@ -75,7 +79,7 @@ func GetAllFields(res http.ResponseWriter, req *http.Request) {
 	}
 	trs.Commit()
 	resp.Data = fields
-	resp.Metadata = metaData
+	resp.Metadata = metadata
 	resp.Render(res, req)
 }
 
@@ -125,12 +129,7 @@ func UpdateField(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	columns, translations, err := util.GetColumnsFromBody(body, field)
-	if err != nil {
-		resp.NewError("UpdateField", err)
-		resp.Render(res, req)
-		return
-	}
+	columns, translations := util.GetColumnsFromBody(body, field)
 
 	trs, err := db.NewTransaction()
 	if err != nil {

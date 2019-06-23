@@ -2,7 +2,15 @@ package lookup
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/agile-work/srv-mdl-shared/models/customerror"
+
+	"github.com/agile-work/srv-shared/constants"
+	"github.com/agile-work/srv-shared/sql-builder/builder"
+	"github.com/agile-work/srv-shared/sql-builder/db"
 
 	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
@@ -10,15 +18,44 @@ import (
 
 // StaticDefinition define specific fields for the lookup definition
 type StaticDefinition struct {
-	Options   map[string]Option `json:"options,omitempty"`
+	Options   map[string]Option `json:"options"`
 	OrderType string            `json:"order_type,omitempty"`
 	Order     []string          `json:"order,omitempty"`
+}
+
+func (d *StaticDefinition) parse(payload json.RawMessage) error {
+	if err := json.Unmarshal(payload, d); err != nil {
+		return customerror.New(http.StatusBadRequest, "lookup static parse", err.Error())
+	}
+
+	if err := mdlShared.Validate.Struct(d); err != nil {
+		return customerror.New(http.StatusBadRequest, "lookup static invalid", err.Error())
+	}
+	return nil
+}
+
+// GetValueAndLabel returns the value and code columns og the lookup
+func (d *StaticDefinition) GetValueAndLabel() (string, string) {
+	return "code", "label"
+}
+
+func (d *StaticDefinition) getInstances() []map[string]interface{} {
+	result := []map[string]interface{}{}
+	for _, code := range d.Order {
+		item := map[string]interface{}{}
+		item["code"] = code
+		if option, ok := d.Options[code]; ok && option.Active {
+			item["label"] = option.Label
+		}
+		result = append(result, item)
+	}
+	return result
 }
 
 // Option defines the struct of a static option
 type Option struct {
 	Code      string                  `json:"code"`
-	Label     translation.Translation `json:"label,omitempty"`
+	Label     translation.Translation `json:"label"`
 	Active    bool                    `json:"active"`
 	CreatedBy string                  `json:"created_by"`
 	CreatedAt time.Time               `json:"created_at"`
@@ -26,17 +63,54 @@ type Option struct {
 	UpdatedAt time.Time               `json:"updated_at"`
 }
 
-func (d *StaticDefinition) parse(payload json.RawMessage) error {
-	if err := json.Unmarshal(payload, d); err != nil {
-		return err
+// Add inserts a new lookup option
+func (o *Option) Add(trs *db.Transaction, lookupCode string) error {
+	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
+		Conditions: builder.Equal("code", lookupCode),
+	})
+	if err != nil || total == 0 {
+		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
 	}
 
-	if err := mdlShared.Validate.Struct(d); err != nil {
-		return err
+	total, err = db.Count(fmt.Sprintf("definitions->'options'->>'%s'", o.Code), constants.TableCoreLookups, &db.Options{
+		Conditions: builder.Equal("code", lookupCode),
+	})
+	if err != nil {
+		return customerror.New(http.StatusBadRequest, "validate lookup", err.Error())
 	}
+
+	if total > 0 {
+		return customerror.New(http.StatusNotFound, "validate lookup", "code already exists")
+	}
+
+	optionBytes, _ := json.Marshal(o)
+	querySQL := fmt.Sprintf(`update %s set definitions = jsonb_insert(
+		definitions, '{options, %s}', '%s', true)
+		where code = '%s'`, constants.TableCoreLookups, o.Code, string(optionBytes), lookupCode)
+
+	if _, err := trs.Query(builder.Raw(querySQL)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "Add", err.Error())
+	}
+
 	return nil
 }
 
-func (d *StaticDefinition) GetValueAndLabel() (string, string) {
-	return "code", "label"
+// Delete delets a lookup option
+func (o *Option) Delete(trs *db.Transaction, lookupCode string) error {
+	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
+		Conditions: builder.Equal("code", lookupCode),
+	})
+	if err != nil || total == 0 {
+		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
+	}
+
+	querySQL := fmt.Sprintf(`update %s set definitions = jsonb_set(
+		definitions, '{options}', (definitions->'options') - '%s', true)
+		where code = '%s'`, constants.TableCoreLookups, o.Code, lookupCode)
+
+	if _, err := trs.Query(builder.Raw(querySQL)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "Delete", err.Error())
+	}
+
+	return nil
 }

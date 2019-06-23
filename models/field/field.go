@@ -50,9 +50,8 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 
 	if f.Type == constants.FieldLookup {
 		fldLkpDef := def.(*LookupDefinition)
-		lkp := lookup.Lookup{}
-		err := lkp.Load(fldLkpDef.LookupCode)
-		if err != nil {
+		lkp := lookup.Lookup{Code: fldLkpDef.LookupCode}
+		if err := lkp.Load(); err != nil {
 			return customerror.New(http.StatusInternalServerError, "lookup load", err.Error())
 		}
 		if !lkp.Active {
