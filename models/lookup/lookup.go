@@ -8,6 +8,7 @@ import (
 
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
+	"github.com/agile-work/srv-mdl-shared/models/user"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -112,7 +113,7 @@ func (l *Lookup) Delete(trs *db.Transaction) error {
 }
 
 // GetInstances returns lookup instances according to type
-func (l *Lookup) GetInstances(params map[string]interface{}) ([]map[string]interface{}, error) {
+func (l *Lookup) GetInstances(params map[string]interface{}, usr *user.User) ([]map[string]interface{}, error) {
 	def, err := l.GetDefinition()
 	if err != nil {
 		return nil, customerror.New(http.StatusBadRequest, "GetBody read", err.Error())
@@ -123,9 +124,26 @@ func (l *Lookup) GetInstances(params map[string]interface{}) ([]map[string]inter
 	switch l.Type {
 	case constants.LookupDynamic:
 		lkpDynDef := def.(*DynamicDefinition)
-		results, err = lkpDynDef.getInstances(params)
+		schema, lkpQuery, values, err := lkpDynDef.getInstanceInformation(params)
 		if err != nil {
 			return nil, customerror.New(http.StatusBadRequest, "lookup dynamic get instances", err.Error())
+		}
+
+		statement, err := usr.GetSecurityQueryWithSub(schema, lkpQuery)
+		if err != nil {
+			return nil, customerror.New(http.StatusInternalServerError, "lookup dynamic get security query", err.Error())
+		}
+
+		query, _ := statement.Query()
+
+		rows, err := db.Query(builder.Raw(query, values...))
+		if err != nil {
+			return nil, customerror.New(http.StatusInternalServerError, "lookup dynamic exec query", err.Error())
+		}
+
+		results, err = usr.SecurityMapScanWithFields(schema, rows, lkpDynDef.getSecurityFields())
+		if err != nil {
+			return nil, customerror.New(http.StatusInternalServerError, "lookup dynamic scan", err.Error())
 		}
 	case constants.LookupStatic:
 		lkpStaDef := def.(*StaticDefinition)
@@ -140,12 +158,16 @@ func (l *Lookup) GetDefinition() (Definition, error) {
 	switch l.Type {
 	case constants.LookupStatic:
 		def := &StaticDefinition{}
-		err := def.parse(l.Definitions)
-		return def, customerror.New(http.StatusBadRequest, "lookup dynamic get definition", err.Error())
+		if err := def.parse(l.Definitions); err != nil {
+			return nil, customerror.New(http.StatusBadRequest, "lookup dynamic get definition", err.Error())
+		}
+		return def, nil
 	case constants.LookupDynamic:
 		def := &DynamicDefinition{}
-		err := def.parse(l.Definitions)
-		return def, customerror.New(http.StatusBadRequest, "lookup static get definition", err.Error())
+		if err := def.parse(l.Definitions); err != nil {
+			return nil, customerror.New(http.StatusBadRequest, "lookup static get definition", err.Error())
+		}
+		return def, nil
 	}
 	return nil, nil
 }

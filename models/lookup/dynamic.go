@@ -58,7 +58,7 @@ func (d *DynamicDefinition) ParseQuery(languageCode string) error {
 		}
 
 		if fields[1] == "security" {
-			parsedQuery = strings.Replace(parsedQuery, p, "1 = 1", -1)
+			parsedQuery = strings.Replace(parsedQuery, p, "", -1)
 			continue
 		}
 
@@ -72,21 +72,8 @@ func (d *DynamicDefinition) ParseQuery(languageCode string) error {
 		if len(fields) > 3 {
 			param.Pattern = fields[3]
 		}
-
 		d.Params = append(d.Params, param)
-
-		replaceParam := ""
-		switch param.DataType {
-		case constants.SQLDataTypeText:
-			replaceParam = "''"
-		case constants.SQLDataTypeDate:
-			replaceParam = "current_date"
-		case constants.SQLDataTypeNumber:
-			replaceParam = "0"
-		case constants.SQLDataTypeBool:
-			replaceParam = "true"
-		}
-		parsedQuery = strings.Replace(parsedQuery, p, replaceParam, -1)
+		parsedQuery = strings.Replace(parsedQuery, p, "null", -1)
 	}
 
 	trs, err := db.NewTransaction()
@@ -94,6 +81,7 @@ func (d *DynamicDefinition) ParseQuery(languageCode string) error {
 		return customerror.New(http.StatusInternalServerError, "lookup parse query new transaction", err.Error())
 	}
 
+	// TODO: Tratar colunas jsonb
 	query := fmt.Sprintf("CREATE TEMPORARY TABLE temp_table ON COMMIT DROP AS %s", parsedQuery)
 	_, err = trs.Query(builder.Raw(query))
 	if err != nil {
@@ -178,20 +166,22 @@ func (d *DynamicDefinition) GetValueAndLabel() (string, string) {
 	return "code", "label"
 }
 
-func (d *DynamicDefinition) getInstances(params map[string]interface{}) ([]map[string]interface{}, error) {
+func (d *DynamicDefinition) getInstanceInformation(params map[string]interface{}) (string, string, []interface{}, error) {
 	r := regexp.MustCompile("{{param:[^}}]*}}")
 	paramsQuery := r.FindAllString(d.Query, -1)
 	parsedQuery := d.Query
 	values := []interface{}{}
+	schema := ""
 
 	for _, p := range paramsQuery {
 		fields := strings.Split(p[0:len(p)-2], ":")
 		if len(fields) < 3 {
-			return nil, customerror.New(http.StatusBadRequest, "lookup parse query", "invalid query param")
+			return "", "", nil, customerror.New(http.StatusBadRequest, "lookup parse query", "invalid query param")
 		}
 
 		if fields[1] == "security" {
-			parsedQuery = strings.Replace(parsedQuery, p, "1 = 1", -1)
+			schema = fields[2]
+			parsedQuery = strings.Replace(parsedQuery, p, "", -1)
 			continue
 		}
 
@@ -213,17 +203,19 @@ func (d *DynamicDefinition) getInstances(params map[string]interface{}) ([]map[s
 		}
 	}
 
-	rows, err := db.Query(builder.Raw(parsedQuery, values...))
-	if err != nil {
-		return nil, customerror.New(http.StatusInternalServerError, "lookup get instance select", err.Error())
-	}
+	return schema, parsedQuery, values, nil
+}
 
-	results, err := db.MapScan(rows)
-	if err != nil {
-		return nil, customerror.New(http.StatusInternalServerError, "lookup get instance map scan", err.Error())
+func (d *DynamicDefinition) getSecurityFields() map[string]map[string]string {
+	result := map[string]map[string]string{}
+	for _, f := range d.Fields {
+		if f.Security.FieldCode != "" {
+			column := map[string]string{}
+			column[f.Code] = f.Security.FieldCode
+			result[f.Security.SchemaCode] = column
+		}
 	}
-
-	return results, nil
+	return result
 }
 
 func unique(slice []string) []string {
