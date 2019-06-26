@@ -1,4 +1,4 @@
-package lookup
+package dataset
 
 import (
 	"encoding/json"
@@ -19,7 +19,7 @@ import (
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 )
 
-// StaticDefinition define specific fields for the lookup definition
+// StaticDefinition define specific fields for the dataset definition
 type StaticDefinition struct {
 	Options   map[string]Option `json:"options"`
 	OrderType string            `json:"order_type,omitempty"`
@@ -28,16 +28,16 @@ type StaticDefinition struct {
 
 func (d *StaticDefinition) parse(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, d); err != nil {
-		return customerror.New(http.StatusBadRequest, "lookup static parse", err.Error())
+		return customerror.New(http.StatusBadRequest, "dataset static parse", err.Error())
 	}
 
 	if err := mdlShared.Validate.Struct(d); err != nil {
-		return customerror.New(http.StatusBadRequest, "lookup static invalid", err.Error())
+		return customerror.New(http.StatusBadRequest, "dataset static invalid", err.Error())
 	}
 	return nil
 }
 
-// GetValueAndLabel returns the value and code columns og the lookup
+// GetValueAndLabel returns the value and code columns og the dataset
 func (d *StaticDefinition) GetValueAndLabel() (string, string) {
 	return "code", "label"
 }
@@ -66,24 +66,24 @@ type Option struct {
 	UpdatedAt time.Time               `json:"updated_at"`
 }
 
-// Add inserts a new lookup option
-func (o *Option) Add(trs *db.Transaction, lookupCode string) error {
+// Add inserts a new dataset option
+func (o *Option) Add(trs *db.Transaction, datasetCode string) error {
 	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
-		Conditions: builder.Equal("code", lookupCode),
+		Conditions: builder.Equal("code", datasetCode),
 	})
 	if err != nil || total == 0 {
-		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
+		return customerror.New(http.StatusBadRequest, "validate dataset", "invalid dataset code")
 	}
 
 	total, err = db.Count(fmt.Sprintf("definitions->'options'->>'%s'", o.Code), constants.TableCoreLookups, &db.Options{
-		Conditions: builder.Equal("code", lookupCode),
+		Conditions: builder.Equal("code", datasetCode),
 	})
 	if err != nil {
-		return customerror.New(http.StatusBadRequest, "validate lookup", err.Error())
+		return customerror.New(http.StatusBadRequest, "validate dataset", err.Error())
 	}
 
 	if total > 0 {
-		return customerror.New(http.StatusNotFound, "validate lookup", "code already exists")
+		return customerror.New(http.StatusNotFound, "validate dataset", "code already exists")
 	}
 
 	optionBytes, _ := json.Marshal(o)
@@ -96,10 +96,10 @@ func (o *Option) Add(trs *db.Transaction, lookupCode string) error {
 		constants.TableCoreLookups,
 		o.Code,
 		string(optionBytes),
-		lookupCode,
+		datasetCode,
 		constants.TableCoreLookups,
 		o.Code,
-		lookupCode)
+		datasetCode)
 
 	if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 		return customerror.New(http.StatusInternalServerError, "Add", err.Error())
@@ -108,13 +108,13 @@ func (o *Option) Add(trs *db.Transaction, lookupCode string) error {
 	return nil
 }
 
-// Update updates a lookup option
-func (o *Option) Update(trs *db.Transaction, lookupCode string, body map[string]interface{}) error {
+// Update updates a dataset option
+func (o *Option) Update(trs *db.Transaction, datasetCode string, body map[string]interface{}) error {
 	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
-		Conditions: builder.Equal("code", lookupCode),
+		Conditions: builder.Equal("code", datasetCode),
 	})
 	if err != nil || total == 0 {
-		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
+		return customerror.New(http.StatusBadRequest, "validate dataset", "invalid dataset code")
 	}
 
 	cols := util.GetBodyColumns(body)
@@ -128,7 +128,7 @@ func (o *Option) Update(trs *db.Transaction, lookupCode string, body map[string]
 			o.Code,
 			languageCode,
 			o.Label.String(languageCode),
-			lookupCode,
+			datasetCode,
 		)
 		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
@@ -136,7 +136,7 @@ func (o *Option) Update(trs *db.Transaction, lookupCode string, body map[string]
 	} else if sharedUtil.Contains(cols, "label") && languageCode == "all" {
 		jsonBytes, err := json.Marshal(o.Label)
 		if err != nil {
-			return customerror.New(http.StatusBadRequest, "validate lookup options", err.Error())
+			return customerror.New(http.StatusBadRequest, "validate dataset options", err.Error())
 		}
 		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
 				definitions, '{options,%s,label}', '%s', true
@@ -145,7 +145,7 @@ func (o *Option) Update(trs *db.Transaction, lookupCode string, body map[string]
 			constants.TableCoreLookups,
 			o.Code,
 			string(jsonBytes),
-			lookupCode,
+			datasetCode,
 		)
 		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
@@ -161,7 +161,7 @@ func (o *Option) Update(trs *db.Transaction, lookupCode string, body map[string]
 			constants.TableCoreLookups,
 			o.Code,
 			o.Active,
-			lookupCode,
+			datasetCode,
 		)
 		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
@@ -170,24 +170,24 @@ func (o *Option) Update(trs *db.Transaction, lookupCode string, body map[string]
 	return nil
 }
 
-// Delete delets a lookup option
-func (o *Option) Delete(trs *db.Transaction, lookupCode string) error {
+// Delete delets a dataset option
+func (o *Option) Delete(trs *db.Transaction, datasetCode string) error {
 	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
-		Conditions: builder.Equal("code", lookupCode),
+		Conditions: builder.Equal("code", datasetCode),
 	})
 	if err != nil || total == 0 {
-		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
+		return customerror.New(http.StatusBadRequest, "validate dataset", "invalid dataset code")
 	}
 
 	total, err = db.Count(fmt.Sprintf("definitions->'options'->>'%s'", o.Code), constants.TableCoreLookups, &db.Options{
-		Conditions: builder.Equal("code", lookupCode),
+		Conditions: builder.Equal("code", datasetCode),
 	})
 	if err != nil {
-		return customerror.New(http.StatusBadRequest, "validate lookup", err.Error())
+		return customerror.New(http.StatusBadRequest, "validate dataset", err.Error())
 	}
 
 	if total == 0 {
-		return customerror.New(http.StatusNotFound, "validate lookup", "options not found")
+		return customerror.New(http.StatusNotFound, "validate dataset", "options not found")
 	}
 
 	sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
@@ -198,10 +198,10 @@ func (o *Option) Delete(trs *db.Transaction, lookupCode string) error {
 		where code = '%s';`,
 		constants.TableCoreLookups,
 		o.Code,
-		lookupCode,
+		datasetCode,
 		constants.TableCoreLookups,
 		o.Code,
-		lookupCode,
+		datasetCode,
 	)
 
 	if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {

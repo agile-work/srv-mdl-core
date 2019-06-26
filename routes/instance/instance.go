@@ -24,8 +24,8 @@ func Routes() *chi.Mux {
 		r.Get("/resources", controller.GetAllResources)
 		r.Get("/resources/{resource_id}", controller.GetResource)
 		r.Patch("/resources/{resource_id}", controller.UpdateResource)
-		// lookups
-		r.Get("/lookups/{lookup_code}", controller.GetLookupInstance)
+		// datasets
+		r.Get("/datasets/{dataset_code}", controller.GetDatasetInstance)
 	})
 
 	return r

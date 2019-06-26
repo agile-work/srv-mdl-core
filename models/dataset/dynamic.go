@@ -1,4 +1,4 @@
-package lookup
+package dataset
 
 import (
 	"encoding/json"
@@ -8,34 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/agile-work/srv-mdl-shared/util"
-
 	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
+	"github.com/agile-work/srv-mdl-shared/util"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
-	sharedUtil "github.com/agile-work/srv-shared/util"
 )
 
-// Param defines the struct of a dynamic filter param
-type Param struct {
-	Code     string                  `json:"code"`
-	DataType string                  `json:"data_type"`
-	Label    translation.Translation `json:"label"`
-	Type     string                  `json:"field_type,omitempty"`
-	Pattern  string                  `json:"pattern,omitempty"`
-	Security Security                `json:"security,omitempty"`
-}
-
-// Security defines the fields to set security to a field
-type Security struct {
-	SchemaCode string `json:"schema_code"`
-	FieldCode  string `json:"field_code"`
-}
-
-// DynamicDefinition define specific fields for the lookup definition
+// DynamicDefinition define specific fields for the dataset definition
 type DynamicDefinition struct {
 	Query     string    `json:"query"`
 	Fields    []Param   `json:"fields"`
@@ -46,49 +28,49 @@ type DynamicDefinition struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// UpdateQuery updates a query lookup
-func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, lookupCode string) error {
-	lkp := &Lookup{Code: lookupCode}
-	if err := lkp.Load(); err != nil {
-		return customerror.New(http.StatusInternalServerError, "validate lookup", err.Error())
+// UpdateQuery updates a query dataset
+func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode string) error {
+	ds := &Dataset{Code: datasetCode}
+	if err := ds.Load(); err != nil {
+		return customerror.New(http.StatusInternalServerError, "validate dataset", err.Error())
 	}
 
-	if lkp.ID == "" {
-		return customerror.New(http.StatusInternalServerError, "validate lookup", "invalid lookup code")
+	if ds.ID == "" {
+		return customerror.New(http.StatusInternalServerError, "validate dataset", "invalid dataset code")
 	}
 
-	def, err := lkp.GetDefinition()
+	def, err := ds.GetDefinition()
 	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "validate lookup get definition", err.Error())
+		return customerror.New(http.StatusInternalServerError, "validate dataset get definition", err.Error())
 	}
 
 	if d.Query == "" {
-		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid query")
+		return customerror.New(http.StatusBadRequest, "validate dataset", "invalid query")
 	}
 
 	if err := d.ParseQuery(translation.FieldsRequestLanguageCode); err != nil {
-		return customerror.New(http.StatusBadRequest, "lookup parse query", err.Error())
+		return customerror.New(http.StatusBadRequest, "dataset parse query", err.Error())
 	}
 
-	lkpDynDef := def.(*DynamicDefinition)
+	dsDynDef := def.(*DynamicDefinition)
 
-	// // TODO: Activate this validation when implementing publish lookup
-	// if len(currentDynamicLookup.Fields) > len(d.Fields) || len(currentDynamicLookup.Params) > len(d.Params) {
+	// // TODO: Activate this validation when implementing publish dataset
+	// if len(currentDynamicDataset.Fields) > len(d.Fields) || len(currentDynamicDataset.Params) > len(d.Params) {
 	// 	response.Code = http.StatusInternalServerError
-	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorParsingRequest, "UpdateLookupQuery validation", "can't change query structure"))
+	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorParsingRequest, "UpdateDatasetQuery validation", "can't change query structure"))
 
 	// 	return response
 	// }
 
 	// errors := []string{}
 
-	// for _, f := range currentDynamicLookup.Fields {
+	// for _, f := range currentDynamicDataset.Fields {
 	// 	if !d.ContainsField(f) {
 	// 		errors = append(errors, f.Code)
 	// 	}
 	// }
 
-	// for _, p := range currentDynamicLookup.Params {
+	// for _, p := range currentDynamicDataset.Params {
 	// 	if d.ContainsParam(p) == -1 {
 	// 		errors = append(errors, p.Code)
 	// 	}
@@ -97,32 +79,32 @@ func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, lookupCode string) 
 	// if len(errors) > 0 {
 	// 	msg := fmt.Sprintf("can't change query structure, invalid: %s", strings.Join(errors, ", "))
 	// 	response.Code = http.StatusInternalServerError
-	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorInsertingRecord, "UpdateLookupQuery validation", msg))
+	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorInsertingRecord, "UpdateDatasetQuery validation", msg))
 
 	// 	return response
 	// }
 
 	for _, f := range d.Fields {
-		if !lkpDynDef.ContainsField(f) {
-			lkpDynDef.Fields = append(d.Fields, f)
+		if !dsDynDef.ContainsField(f) {
+			dsDynDef.Fields = append(d.Fields, f)
 		}
 	}
 
 	for _, p := range d.Params {
-		val := lkpDynDef.ContainsParam(p)
+		val := dsDynDef.ContainsParam(p)
 		if val == -1 {
-			lkpDynDef.Params = append(lkpDynDef.Params, p)
+			dsDynDef.Params = append(dsDynDef.Params, p)
 		} else if val == 1 {
-			index := lkpDynDef.GetParamIndex(p)
-			lkpDynDef.Params[index].Pattern = p.Pattern
+			index := dsDynDef.GetParamIndex(p)
+			dsDynDef.Params[index].Pattern = p.Pattern
 		}
 	}
 
-	lkpDynDef.UpdatedAt = d.UpdatedAt
-	lkpDynDef.UpdatedBy = d.UpdatedBy
-	lkpDynDef.Query = d.Query
+	dsDynDef.UpdatedAt = d.UpdatedAt
+	dsDynDef.UpdatedBy = d.UpdatedBy
+	dsDynDef.Query = d.Query
 
-	jsonBytes, err := json.Marshal(lkpDynDef)
+	jsonBytes, err := json.Marshal(dsDynDef)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "definition parse", err.Error())
 	}
@@ -131,61 +113,9 @@ func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, lookupCode string) 
 		definitions = $$%s$$,
 		updated_by = '%s',
 		updated_at = current_date
-		where code = '%s'`, constants.TableCoreLookups, string(jsonBytes), d.UpdatedBy, lookupCode)
+		where code = '%s'`, constants.TableCoreDatasets, string(jsonBytes), d.UpdatedBy, datasetCode)
 	if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 		return customerror.New(http.StatusInternalServerError, "UpdateQuery", err.Error())
-	}
-	return nil
-}
-
-// Update updates a lookup param
-func (p *Param) Update(trs *db.Transaction, lookupCode string, body map[string]interface{}, typeList string) error {
-	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
-		Conditions: builder.Equal("code", lookupCode),
-	})
-	if err != nil || total == 0 {
-		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
-	}
-
-	cols := util.GetBodyColumns(body)
-	languageCode := translation.FieldsRequestLanguageCode
-	if sharedUtil.Contains(cols, "label") && languageCode != "all" {
-		translation.FieldsRequestLanguageCode = "all"
-		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
-			definitions,
-			('{%s,'|| data_object.obj_index ||',label}') ::text[],
-			'{"%s": "%s"}',
-			true
-			) from (
-				select index-1 as obj_index from core_lookups ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
-				where ((obj->>'code') = '%s') and (code = '%s')
-			)data_object
-			where (code = '%s')`, constants.TableCoreLookups, typeList, languageCode, p.Label.String(languageCode), typeList, p.Code, lookupCode, lookupCode)
-		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
-		}
-	} else if sharedUtil.Contains(cols, "label") && languageCode == "all" {
-		jsonBytes, _ := json.Marshal(p.Label)
-		sqlQuery := getQueryUpdateField("label", string(jsonBytes), p.Code, lookupCode, typeList)
-		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
-		}
-	}
-
-	if sharedUtil.Contains(cols, "field_type") && p.Type == "field" {
-		jsonBytes, _ := json.Marshal(p.Type)
-		sqlQuery := getQueryUpdateField("field_type", string(jsonBytes), p.Code, lookupCode, typeList)
-		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
-		}
-	}
-
-	if sharedUtil.Contains(cols, "security") && p.Type == "field" {
-		jsonBytes, _ := json.Marshal(p.Security)
-		sqlQuery := getQueryUpdateField("security", string(jsonBytes), p.Code, lookupCode, typeList)
-		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
-		}
 	}
 	return nil
 }
@@ -194,14 +124,14 @@ func (p *Param) Update(trs *db.Transaction, lookupCode string, body map[string]i
 func (d *DynamicDefinition) ParseQuery(languageCode string) error {
 	r := regexp.MustCompile("{{param:[^}}]*}}")
 	params := r.FindAllString(d.Query, -1)
-	params = unique(params)
+	params = util.Unique(params)
 	parsedQuery := d.Query
 
 	for _, p := range params {
 		param := Param{}
 		fields := strings.Split(p[0:len(p)-2], ":")
 		if len(fields) < 3 {
-			return customerror.New(http.StatusBadRequest, "lookup parse query", "invalid query param")
+			return customerror.New(http.StatusBadRequest, "dataset parse query", "invalid query param")
 		}
 
 		if fields[1] == "security" {
@@ -211,7 +141,7 @@ func (d *DynamicDefinition) ParseQuery(languageCode string) error {
 
 		param.Code = fields[1]
 		if paramCodeExists(d.Params, param.Code) {
-			return customerror.New(http.StatusBadRequest, "lookup parse query", "invalid query param, duplicated code "+param.Code)
+			return customerror.New(http.StatusBadRequest, "dataset parse query", "invalid query param, duplicated code "+param.Code)
 		}
 		param.Label.Language = make(map[string]string)
 		param.Label.Language[languageCode] = param.Code
@@ -225,7 +155,7 @@ func (d *DynamicDefinition) ParseQuery(languageCode string) error {
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "lookup parse query new transaction", err.Error())
+		return customerror.New(http.StatusInternalServerError, "dataset parse query new transaction", err.Error())
 	}
 
 	// TODO: Tratar colunas jsonb
@@ -233,19 +163,19 @@ func (d *DynamicDefinition) ParseQuery(languageCode string) error {
 	_, err = trs.Query(builder.Raw(query))
 	if err != nil {
 		trs.Rollback()
-		return customerror.New(http.StatusInternalServerError, "lookup parse query create temporary table", err.Error())
+		return customerror.New(http.StatusInternalServerError, "dataset parse query create temporary table", err.Error())
 	}
 	query = "SELECT column_name as code, data_type FROM information_schema.columns WHERE table_name = 'temp_table'"
 	rows, err := trs.Query(builder.Raw(query))
 	if err != nil {
 		trs.Rollback()
-		return customerror.New(http.StatusInternalServerError, "lookup parse query select", err.Error())
+		return customerror.New(http.StatusInternalServerError, "dataset parse query select", err.Error())
 	}
 
 	err = db.StructScan(rows, &d.Fields)
 	if err != nil {
 		trs.Rollback()
-		return customerror.New(http.StatusInternalServerError, "lookup parse query struct scan", err.Error())
+		return customerror.New(http.StatusInternalServerError, "dataset parse query struct scan", err.Error())
 	}
 	for i, f := range d.Fields {
 		d.Fields[i].DataType = parseSQLType(f.DataType)
@@ -299,16 +229,16 @@ func (d *DynamicDefinition) ContainsParam(param Param) int {
 
 func (d *DynamicDefinition) parse(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, d); err != nil {
-		return customerror.New(http.StatusBadRequest, "lookup dynamic parse", err.Error())
+		return customerror.New(http.StatusBadRequest, "dataset dynamic parse", err.Error())
 	}
 
 	if err := mdlShared.Validate.Struct(d); err != nil {
-		return customerror.New(http.StatusBadRequest, "lookup dynamic invalid", err.Error())
+		return customerror.New(http.StatusBadRequest, "dataset dynamic invalid", err.Error())
 	}
 	return nil
 }
 
-// GetValueAndLabel returns the value and code columns og the lookup
+// GetValueAndLabel returns the value and code columns og the dataset
 func (d *DynamicDefinition) GetValueAndLabel() (string, string) {
 	return "code", "label"
 }
@@ -323,7 +253,7 @@ func (d *DynamicDefinition) getInstanceInformation(params map[string]interface{}
 	for _, p := range paramsQuery {
 		fields := strings.Split(p[0:len(p)-2], ":")
 		if len(fields) < 3 {
-			return "", "", nil, customerror.New(http.StatusBadRequest, "lookup parse query", "invalid query param")
+			return "", "", nil, customerror.New(http.StatusBadRequest, "dataset parse query", "invalid query param")
 		}
 
 		if fields[1] == "security" {
@@ -365,27 +295,6 @@ func (d *DynamicDefinition) getSecurityFields() map[string]map[string]string {
 	return result
 }
 
-func unique(slice []string) []string {
-	keys := make(map[string]bool)
-	list := []string{}
-	for _, entry := range slice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
-}
-
-func paramCodeExists(params []Param, code string) bool {
-	for _, p := range params {
-		if p.Code == code {
-			return true
-		}
-	}
-	return false
-}
-
 func parseSQLType(sqlType string) string {
 	if strings.Contains(sqlType, "timestamp") {
 		return constants.SQLDataTypeDate
@@ -402,15 +311,15 @@ func parseSQLType(sqlType string) string {
 	}
 }
 
-func getQueryUpdateField(field, value, paramCode, lookupCode, typeList string) string {
+func getQueryUpdateField(field, value, paramCode, datasetCode, typeList string) string {
 	return fmt.Sprintf(`update %s set definitions = jsonb_set(
 		definitions,
 		('{%s,'|| data_object.obj_index ||'}') ::text[],
 		'{"%s": %s}',
 		true
 		) from (
-			select index-1 as obj_index from core_lookups ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
+			select index-1 as obj_index from core_datasets ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
 			where ((obj->>'code') = '%s') and (code = '%s')
 		)data_object
-		where (code = '%s')`, constants.TableCoreLookups, typeList, field, value, typeList, paramCode, lookupCode, lookupCode)
+		where (code = '%s')`, constants.TableCoreDatasets, typeList, field, value, typeList, paramCode, datasetCode, datasetCode)
 }

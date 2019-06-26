@@ -15,7 +15,7 @@ func Routes() *chi.Mux {
 		r.Mount("/trees", TreeRoutes())
 		r.Mount("/schemas", SchemaRoutes())
 		r.Mount("/widgets", WidgetRoutes())
-		r.Mount("/lookups", LookupRoutes())
+		r.Mount("/datasets", DatasetRoutes())
 		r.Mount("/groups", GroupRoutes())
 		r.Mount("/currencies", CurrencyRoutes())
 		r.Mount("/jobs", JobRoutes())

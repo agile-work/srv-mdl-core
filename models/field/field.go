@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/agile-work/srv-mdl-core/models/dataset"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 
-	"github.com/agile-work/srv-mdl-core/models/lookup"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -50,26 +50,26 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 
 	if f.Type == constants.FieldLookup {
 		fldLkpDef := def.(*LookupDefinition)
-		lkp := lookup.Lookup{Code: fldLkpDef.LookupCode}
+		lkp := dataset.Dataset{Code: fldLkpDef.LookupCode}
 		if err := lkp.Load(); err != nil {
-			return customerror.New(http.StatusInternalServerError, "lookup load", err.Error())
+			return customerror.New(http.StatusInternalServerError, "dataset load", err.Error())
 		}
 		if !lkp.Active {
-			return customerror.New(http.StatusInternalServerError, "lookup load", "invalid lookup code")
+			return customerror.New(http.StatusInternalServerError, "dataset load", "invalid dataset code")
 		}
 
 		lkpDef, err := lkp.GetDefinition()
 		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "lookup get definition", err.Error())
+			return customerror.New(http.StatusInternalServerError, "dataset get definition", err.Error())
 		}
 
 		fldLkpDef.LookupValue, fldLkpDef.LookupLabel = lkpDef.GetValueAndLabel()
 		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "lookup get value and label", err.Error())
+			return customerror.New(http.StatusInternalServerError, "dataset get value and label", err.Error())
 		}
 
-		if fldLkpDef.Type != constants.FieldLookupStatic {
-			lkpDynDef := lkpDef.(*lookup.DynamicDefinition)
+		if fldLkpDef.Type != constants.FieldDatasetStatic {
+			lkpDynDef := lkpDef.(*dataset.DynamicDefinition)
 			for _, p := range lkpDynDef.Params {
 				param := LookupParam{
 					Code:     p.Code,
