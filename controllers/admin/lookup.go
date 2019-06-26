@@ -179,15 +179,74 @@ func AddLookupOption(res http.ResponseWriter, req *http.Request) {
 
 // UpdateLookupOption change lookup option data
 func UpdateLookupOption(res http.ResponseWriter, req *http.Request) {
+	opt := &lookup.Option{
+		Code: chi.URLParam(req, "option_code"),
+	}
 	resp := response.New()
 
+	if err := resp.Parse(req, opt); err != nil {
+		resp.NewError("UpdateLookupOption response parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	body, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdateLookupOption get body", err)
+		resp.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdateLookupOption new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	translation.FieldsRequestLanguageCode = "all"
+	if err := opt.Update(trs, chi.URLParam(req, "lookup_code"), body); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdateLookupOption", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+
+	resp.Data = opt
 	resp.Render(res, req)
 }
 
 // DeleteLookupOption delete an option
 func DeleteLookupOption(res http.ResponseWriter, req *http.Request) {
+	opt := &lookup.Option{
+		Code: chi.URLParam(req, "option_code"),
+	}
 	resp := response.New()
 
+	if err := resp.Parse(req, opt); err != nil {
+		resp.NewError("DeleteLookupOption response parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("DeleteLookupOption new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	translation.FieldsRequestLanguageCode = "all"
+	if err := opt.Delete(trs, chi.URLParam(req, "lookup_code")); err != nil {
+		trs.Rollback()
+		resp.NewError("DeleteLookupOption", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+
+	resp.Data = opt
 	resp.Render(res, req)
 }
 
@@ -200,116 +259,106 @@ func UpdateLookupOrder(res http.ResponseWriter, req *http.Request) {
 
 // UpdateLookupQuery change dynamic lookup query
 func UpdateLookupQuery(res http.ResponseWriter, req *http.Request) {
+	def := &lookup.DynamicDefinition{}
 	resp := response.New()
 
+	if err := resp.Parse(req, def); err != nil {
+		resp.NewError("UpdateLookupQuery response parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdateLookupQuery new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	if err := def.UpdateQuery(trs, chi.URLParam(req, "lookup_code")); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdateLookupQuery", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+
+	resp.Data = def
 	resp.Render(res, req)
 }
 
 // UpdateLookupDynamicField change dynamic lookup field
 func UpdateLookupDynamicField(res http.ResponseWriter, req *http.Request) {
+	param := &lookup.Param{}
 	resp := response.New()
 
+	if err := resp.Parse(req, param); err != nil {
+		resp.NewError("UpdateLookupDynamicField response parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	param.Code = chi.URLParam(req, "param_code")
+
+	body, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdateLookupDynamicField get body", err)
+		resp.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdateLookupDynamicField new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	if err := param.Update(trs, chi.URLParam(req, "lookup_code"), body, "fields"); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdateLookupDynamicField", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = param
 	resp.Render(res, req)
 }
 
 // UpdateLookupDynamicParam change dynamic lookup param
 func UpdateLookupDynamicParam(res http.ResponseWriter, req *http.Request) {
+	param := &lookup.Param{}
 	resp := response.New()
 
+	if err := resp.Parse(req, param); err != nil {
+		resp.NewError("UpdateLookupDynamicParam response parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	param.Code = chi.URLParam(req, "param_code")
+
+	body, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdateLookupDynamicParam get body", err)
+		resp.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdateLookupDynamicParam new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	if err := param.Update(trs, chi.URLParam(req, "lookup_code"), body, "params"); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdateLookupDynamicParam", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = param
 	resp.Render(res, req)
 }
-
-// // AddLookupOption add a new option to a lookup
-// func AddLookupOption(res http.ResponseWriter, req *http.Request) {
-// 	response := services.AddLookupOption(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-// // PostLookup sends the request to service creating a new lookup
-// func PostLookup(res http.ResponseWriter, req *http.Request) {
-// 	response := services.CreateLookup(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // GetAllLookups return all lookup instances from the service
-// func GetAllLookups(res http.ResponseWriter, req *http.Request) {
-// 	response := services.LoadAllLookups(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // GetLookup return only one lookup from the service
-// func GetLookup(res http.ResponseWriter, req *http.Request) {
-// 	response := services.LoadLookup(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // UpdateLookup sends the request to service updating a lookup
-// func UpdateLookup(res http.ResponseWriter, req *http.Request) {
-// 	response := services.UpdateLookup(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // DeleteLookup sends the request to service deleting a lookup
-// func DeleteLookup(res http.ResponseWriter, req *http.Request) {
-// 	response := services.DeleteLookup(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // UpdateLookupOption change lookup option data
-// func UpdateLookupOption(res http.ResponseWriter, req *http.Request) {
-// 	response := services.UpdateLookupOption(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // DeleteLookupOption delete an option
-// func DeleteLookupOption(res http.ResponseWriter, req *http.Request) {
-// 	response := services.DeleteLookupOption(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // UpdateLookupOrder delete an option
-// func UpdateLookupOrder(res http.ResponseWriter, req *http.Request) {
-// 	response := services.UpdateLookupOrder(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // UpdateLookupQuery change dynamic lookup query
-// func UpdateLookupQuery(res http.ResponseWriter, req *http.Request) {
-// 	response := services.UpdateLookupQuery(r)
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // UpdateLookupDynamicField change dynamic lookup field
-// func UpdateLookupDynamicField(res http.ResponseWriter, req *http.Request) {
-// 	response := services.UpdateLookupDynamicParam(r, "field")
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }
-
-// // UpdateLookupDynamicParam change dynamic lookup param
-// func UpdateLookupDynamicParam(res http.ResponseWriter, req *http.Request) {
-// 	response := services.UpdateLookupDynamicParam(r, "param")
-
-// 	render.Status(r, response.Code)
-// 	render.JSON(w, r, response)
-// }

@@ -8,12 +8,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/agile-work/srv-mdl-shared/util"
+
 	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
+	sharedUtil "github.com/agile-work/srv-shared/util"
 )
 
 // Param defines the struct of a dynamic filter param
@@ -41,6 +44,150 @@ type DynamicDefinition struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedBy string    `json:"updated_by"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// UpdateQuery updates a query lookup
+func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, lookupCode string) error {
+	lkp := &Lookup{Code: lookupCode}
+	if err := lkp.Load(); err != nil {
+		return customerror.New(http.StatusInternalServerError, "validate lookup", err.Error())
+	}
+
+	if lkp.ID == "" {
+		return customerror.New(http.StatusInternalServerError, "validate lookup", "invalid lookup code")
+	}
+
+	def, err := lkp.GetDefinition()
+	if err != nil {
+		return customerror.New(http.StatusInternalServerError, "validate lookup get definition", err.Error())
+	}
+
+	if d.Query == "" {
+		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid query")
+	}
+
+	if err := d.ParseQuery(translation.FieldsRequestLanguageCode); err != nil {
+		return customerror.New(http.StatusBadRequest, "lookup parse query", err.Error())
+	}
+
+	lkpDynDef := def.(*DynamicDefinition)
+
+	// // TODO: Activate this validation when implementing publish lookup
+	// if len(currentDynamicLookup.Fields) > len(d.Fields) || len(currentDynamicLookup.Params) > len(d.Params) {
+	// 	response.Code = http.StatusInternalServerError
+	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorParsingRequest, "UpdateLookupQuery validation", "can't change query structure"))
+
+	// 	return response
+	// }
+
+	// errors := []string{}
+
+	// for _, f := range currentDynamicLookup.Fields {
+	// 	if !d.ContainsField(f) {
+	// 		errors = append(errors, f.Code)
+	// 	}
+	// }
+
+	// for _, p := range currentDynamicLookup.Params {
+	// 	if d.ContainsParam(p) == -1 {
+	// 		errors = append(errors, p.Code)
+	// 	}
+	// }
+
+	// if len(errors) > 0 {
+	// 	msg := fmt.Sprintf("can't change query structure, invalid: %s", strings.Join(errors, ", "))
+	// 	response.Code = http.StatusInternalServerError
+	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorInsertingRecord, "UpdateLookupQuery validation", msg))
+
+	// 	return response
+	// }
+
+	for _, f := range d.Fields {
+		if !lkpDynDef.ContainsField(f) {
+			lkpDynDef.Fields = append(d.Fields, f)
+		}
+	}
+
+	for _, p := range d.Params {
+		val := lkpDynDef.ContainsParam(p)
+		if val == -1 {
+			lkpDynDef.Params = append(lkpDynDef.Params, p)
+		} else if val == 1 {
+			index := lkpDynDef.GetParamIndex(p)
+			lkpDynDef.Params[index].Pattern = p.Pattern
+		}
+	}
+
+	lkpDynDef.UpdatedAt = d.UpdatedAt
+	lkpDynDef.UpdatedBy = d.UpdatedBy
+	lkpDynDef.Query = d.Query
+
+	jsonBytes, err := json.Marshal(lkpDynDef)
+	if err != nil {
+		return customerror.New(http.StatusInternalServerError, "definition parse", err.Error())
+	}
+
+	sqlQuery := fmt.Sprintf(`update %s set
+		definitions = $$%s$$,
+		updated_by = '%s',
+		updated_at = current_date
+		where code = '%s'`, constants.TableCoreLookups, string(jsonBytes), d.UpdatedBy, lookupCode)
+	if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "UpdateQuery", err.Error())
+	}
+	return nil
+}
+
+// Update updates a lookup param
+func (p *Param) Update(trs *db.Transaction, lookupCode string, body map[string]interface{}, typeList string) error {
+	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
+		Conditions: builder.Equal("code", lookupCode),
+	})
+	if err != nil || total == 0 {
+		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
+	}
+
+	cols := util.GetBodyColumns(body)
+	languageCode := translation.FieldsRequestLanguageCode
+	if sharedUtil.Contains(cols, "label") && languageCode != "all" {
+		translation.FieldsRequestLanguageCode = "all"
+		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
+			definitions,
+			('{%s,'|| data_object.obj_index ||',label}') ::text[],
+			'{"%s": "%s"}',
+			true
+			) from (
+				select index-1 as obj_index from core_lookups ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
+				where ((obj->>'code') = '%s') and (code = '%s')
+			)data_object
+			where (code = '%s')`, constants.TableCoreLookups, typeList, languageCode, p.Label.String(languageCode), typeList, p.Code, lookupCode, lookupCode)
+		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		}
+	} else if sharedUtil.Contains(cols, "label") && languageCode == "all" {
+		jsonBytes, _ := json.Marshal(p.Label)
+		sqlQuery := getQueryUpdateField("label", string(jsonBytes), p.Code, lookupCode, typeList)
+		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		}
+	}
+
+	if sharedUtil.Contains(cols, "field_type") && p.Type == "field" {
+		jsonBytes, _ := json.Marshal(p.Type)
+		sqlQuery := getQueryUpdateField("field_type", string(jsonBytes), p.Code, lookupCode, typeList)
+		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		}
+	}
+
+	if sharedUtil.Contains(cols, "security") && p.Type == "field" {
+		jsonBytes, _ := json.Marshal(p.Security)
+		sqlQuery := getQueryUpdateField("security", string(jsonBytes), p.Code, lookupCode, typeList)
+		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		}
+	}
+	return nil
 }
 
 // ParseQuery validate query and get fields and params from query
@@ -253,4 +400,17 @@ func parseSQLType(sqlType string) string {
 	default:
 		return constants.SQLDataTypeText
 	}
+}
+
+func getQueryUpdateField(field, value, paramCode, lookupCode, typeList string) string {
+	return fmt.Sprintf(`update %s set definitions = jsonb_set(
+		definitions,
+		('{%s,'|| data_object.obj_index ||'}') ::text[],
+		'{"%s": %s}',
+		true
+		) from (
+			select index-1 as obj_index from core_lookups ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
+			where ((obj->>'code') = '%s') and (code = '%s')
+		)data_object
+		where (code = '%s')`, constants.TableCoreLookups, typeList, field, value, typeList, paramCode, lookupCode, lookupCode)
 }

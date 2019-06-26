@@ -21,8 +21,8 @@ func LookupRoutes() *chi.Mux {
 		r.Delete("/{lookup_code}/options/{option_code}", controller.DeleteLookupOption)
 		r.Post("/{lookup_code}/order", controller.UpdateLookupOrder)
 		r.Patch("/{lookup_code}/query", controller.UpdateLookupQuery)
-		r.Patch("/{lookup_code}/field/{param_code}", controller.UpdateLookupDynamicField)
-		r.Patch("/{lookup_code}/param/{param_code}", controller.UpdateLookupDynamicParam)
+		r.Patch("/{lookup_code}/fields/{param_code}", controller.UpdateLookupDynamicField)
+		r.Patch("/{lookup_code}/params/{param_code}", controller.UpdateLookupDynamicParam)
 	})
 
 	return r

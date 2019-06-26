@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/agile-work/srv-mdl-shared/util"
+	sharedUtil "github.com/agile-work/srv-shared/util"
+
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 
 	"github.com/agile-work/srv-shared/constants"
@@ -84,14 +87,86 @@ func (o *Option) Add(trs *db.Transaction, lookupCode string) error {
 	}
 
 	optionBytes, _ := json.Marshal(o)
-	querySQL := fmt.Sprintf(`update %s set definitions = jsonb_insert(
+	sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_insert(
 		definitions, '{options, %s}', '%s', true)
-		where code = '%s'`, constants.TableCoreLookups, o.Code, string(optionBytes), lookupCode)
+		where code = '%s';
+		update %s set definitions = jsonb_set(
+		definitions, '{order}', (definitions->'order') || '"%s"', true)
+		where code = '%s';`,
+		constants.TableCoreLookups,
+		o.Code,
+		string(optionBytes),
+		lookupCode,
+		constants.TableCoreLookups,
+		o.Code,
+		lookupCode)
 
-	if _, err := trs.Query(builder.Raw(querySQL)); err != nil {
+	if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 		return customerror.New(http.StatusInternalServerError, "Add", err.Error())
 	}
 
+	return nil
+}
+
+// Update updates a lookup option
+func (o *Option) Update(trs *db.Transaction, lookupCode string, body map[string]interface{}) error {
+	total, err := db.Count("id", constants.TableCoreLookups, &db.Options{
+		Conditions: builder.Equal("code", lookupCode),
+	})
+	if err != nil || total == 0 {
+		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
+	}
+
+	cols := util.GetBodyColumns(body)
+	languageCode := translation.FieldsRequestLanguageCode
+	if sharedUtil.Contains(cols, "label") && languageCode != "all" {
+		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
+				definitions, '{options,%s,label,%s}', '"%s"', true
+			)
+			where code = '%s'`,
+			constants.TableCoreLookups,
+			o.Code,
+			languageCode,
+			o.Label.String(languageCode),
+			lookupCode,
+		)
+		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		}
+	} else if sharedUtil.Contains(cols, "label") && languageCode == "all" {
+		jsonBytes, err := json.Marshal(o.Label)
+		if err != nil {
+			return customerror.New(http.StatusBadRequest, "validate lookup options", err.Error())
+		}
+		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
+				definitions, '{options,%s,label}', '%s', true
+			)
+			where code = '%s'`,
+			constants.TableCoreLookups,
+			o.Code,
+			string(jsonBytes),
+			lookupCode,
+		)
+		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		}
+	}
+
+	// get fields from payload
+	if sharedUtil.Contains(cols, "active") {
+		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
+			definitions, '{options,%s,active}', '%t', true
+		)
+		where code = '%s'`,
+			constants.TableCoreLookups,
+			o.Code,
+			o.Active,
+			lookupCode,
+		)
+		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		}
+	}
 	return nil
 }
 
@@ -104,11 +179,32 @@ func (o *Option) Delete(trs *db.Transaction, lookupCode string) error {
 		return customerror.New(http.StatusBadRequest, "validate lookup", "invalid lookup code")
 	}
 
-	querySQL := fmt.Sprintf(`update %s set definitions = jsonb_set(
-		definitions, '{options}', (definitions->'options') - '%s', true)
-		where code = '%s'`, constants.TableCoreLookups, o.Code, lookupCode)
+	total, err = db.Count(fmt.Sprintf("definitions->'options'->>'%s'", o.Code), constants.TableCoreLookups, &db.Options{
+		Conditions: builder.Equal("code", lookupCode),
+	})
+	if err != nil {
+		return customerror.New(http.StatusBadRequest, "validate lookup", err.Error())
+	}
 
-	if _, err := trs.Query(builder.Raw(querySQL)); err != nil {
+	if total == 0 {
+		return customerror.New(http.StatusNotFound, "validate lookup", "options not found")
+	}
+
+	sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
+		definitions, '{options}', (definitions->'options') - '%s', true)
+		where code = '%s';
+		update %s set definitions = jsonb_set(
+		definitions, '{order}', (definitions->'order') - '%s', true)
+		where code = '%s';`,
+		constants.TableCoreLookups,
+		o.Code,
+		lookupCode,
+		constants.TableCoreLookups,
+		o.Code,
+		lookupCode,
+	)
+
+	if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 		return customerror.New(http.StatusInternalServerError, "Delete", err.Error())
 	}
 
