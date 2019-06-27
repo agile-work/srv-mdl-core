@@ -54,7 +54,7 @@ func GetAllDatasets(res http.ResponseWriter, req *http.Request) {
 
 	metadata := response.Metadata{}
 	if err := metadata.Load(req); err != nil {
-		resp.NewError("GetDatasetInstance metadata parse", err)
+		resp.NewError("GetAllDatasets metadata parse", err)
 		resp.Render(res, req)
 		return
 	}

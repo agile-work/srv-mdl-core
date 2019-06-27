@@ -44,7 +44,7 @@ func (p *Param) Update(trs *db.Transaction, datasetCode string, body map[string]
 	languageCode := translation.FieldsRequestLanguageCode
 	if sharedUtil.Contains(cols, "label") && languageCode != "all" {
 		translation.FieldsRequestLanguageCode = "all"
-		sqlQuery := fmt.Sprintf(`update %s set definitions = jsonb_set(
+		if _, err := trs.Query(builder.Raw(fmt.Sprintf(`update %s set definitions = jsonb_set(
 			definitions,
 			('{%s,'|| data_object.obj_index ||',label}') ::text[],
 			'{"%s": "%s"}',
@@ -53,8 +53,16 @@ func (p *Param) Update(trs *db.Transaction, datasetCode string, body map[string]
 				select index-1 as obj_index from core_datasets ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
 				where ((obj->>'code') = '%s') and (code = '%s')
 			)data_object
-			where (code = '%s')`, constants.TableCoreDatasets, typeList, languageCode, p.Label.String(languageCode), typeList, p.Code, datasetCode, datasetCode)
-		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+			where (code = '%s')`,
+			constants.TableCoreDatasets,
+			typeList,
+			languageCode,
+			p.Label.String(languageCode),
+			typeList,
+			p.Code,
+			datasetCode,
+			datasetCode,
+		))); err != nil {
 			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
 		}
 	} else if sharedUtil.Contains(cols, "label") && languageCode == "all" {
@@ -65,18 +73,39 @@ func (p *Param) Update(trs *db.Transaction, datasetCode string, body map[string]
 		}
 	}
 
-	if sharedUtil.Contains(cols, "field_type") && p.Type == "field" {
-		jsonBytes, _ := json.Marshal(p.Type)
+	// TODO: Verificar se era p/ alterar o tipo do field
+	if sharedUtil.Contains(cols, "field_type") && typeList == "fields" {
+		jsonBytes, err := json.Marshal(p.Type)
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "field_type parse", err.Error())
+		}
 		sqlQuery := getQueryUpdateField("field_type", string(jsonBytes), p.Code, datasetCode, typeList)
 		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
 		}
 	}
 
-	if sharedUtil.Contains(cols, "security") && p.Type == "field" {
-		jsonBytes, _ := json.Marshal(p.Security)
-		sqlQuery := getQueryUpdateField("security", string(jsonBytes), p.Code, datasetCode, typeList)
-		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+	if sharedUtil.Contains(cols, "security") && typeList == "fields" {
+		jsonBytes, err := json.Marshal(p.Security)
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "security parse", err.Error())
+		}
+		if _, err := trs.Query(builder.Raw(fmt.Sprintf(`update %s set definitions = jsonb_set(
+			definitions,
+			('{fields,'|| data_object.obj_index ||',security}') ::text[],
+			'%s',
+			true
+			) from (
+				select index-1 as obj_index from core_datasets ,jsonb_array_elements(definitions->'fields') with ordinality arr(obj, index)
+				where ((obj->>'code') = '%s') and (code = '%s')
+			)data_object
+			where (code = '%s')`,
+			constants.TableCoreDatasets,
+			string(jsonBytes),
+			p.Code,
+			datasetCode,
+			datasetCode,
+		))); err != nil {
 			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
 		}
 	}
@@ -90,4 +119,19 @@ func paramCodeExists(params []Param, code string) bool {
 		}
 	}
 	return false
+}
+
+func getQueryUpdateField(field, value, paramCode, datasetCode, typeList string) string {
+	qry := fmt.Sprintf(`update %s set definitions = jsonb_set(
+		definitions,
+		('{%s,'|| data_object.obj_index ||'}') ::text[],
+		'{"%s": %s}',
+		true
+		) from (
+			select index-1 as obj_index from core_datasets ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
+			where ((obj->>'code') = '%s') and (code = '%s')
+		)data_object
+		where (code = '%s')`, constants.TableCoreDatasets, typeList, field, value, typeList, paramCode, datasetCode, datasetCode)
+	fmt.Println(qry)
+	return qry
 }

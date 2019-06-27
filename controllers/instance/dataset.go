@@ -22,6 +22,14 @@ func GetDatasetInstance(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	metadata := response.Metadata{}
+	if err := metadata.Load(req); err != nil {
+		resp.NewError("GetDatasetInstance metadata parse", err)
+		resp.Render(res, req)
+		return
+	}
+	opt := metadata.GenerateDBOptions()
+
 	usr := &user.User{Username: req.Header.Get("username")}
 	if err := usr.Load(); err != nil {
 		resp.NewError("GetDatasetInstance user load", err)
@@ -36,7 +44,7 @@ func GetDatasetInstance(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	result, err := ds.GetInstances(params, usr)
+	result, err := ds.GetInstances(params, usr, opt)
 	if err != nil {
 		resp.NewError("GetDatasetInstance", err)
 		resp.Render(res, req)
@@ -44,5 +52,6 @@ func GetDatasetInstance(res http.ResponseWriter, req *http.Request) {
 	}
 
 	resp.Data = result
+	resp.Metadata = metadata
 	resp.Render(res, req)
 }

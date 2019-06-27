@@ -113,7 +113,7 @@ func (ds *Dataset) Delete(trs *db.Transaction) error {
 }
 
 // GetInstances returns dataset instances according to type
-func (ds *Dataset) GetInstances(params map[string]interface{}, usr *user.User) ([]map[string]interface{}, error) {
+func (ds *Dataset) GetInstances(params map[string]interface{}, usr *user.User, opt *db.Options) ([]map[string]interface{}, error) {
 	def, err := ds.GetDefinition()
 	if err != nil {
 		return nil, customerror.New(http.StatusBadRequest, "GetBody read", err.Error())
@@ -129,7 +129,7 @@ func (ds *Dataset) GetInstances(params map[string]interface{}, usr *user.User) (
 			return nil, customerror.New(http.StatusBadRequest, "dataset dynamic get instances", err.Error())
 		}
 
-		statement, err := usr.GetSecurityQueryWithSub(schema, dsQuery)
+		statement, err := usr.GetSecurityQueryWithSub(schema, dsQuery, opt)
 		if err != nil {
 			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic get security query", err.Error())
 		}
@@ -141,7 +141,7 @@ func (ds *Dataset) GetInstances(params map[string]interface{}, usr *user.User) (
 			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic exec query", err.Error())
 		}
 
-		results, err = usr.SecurityMapScanWithFields(schema, rows, dsDynDef.getSecurityFields())
+		results, err = usr.SecurityMapScanWithFields(schema, rows, opt, dsDynDef.getSecurityFields())
 		if err != nil {
 			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic scan", err.Error())
 		}

@@ -288,6 +288,9 @@ func (d *DynamicDefinition) getSecurityFields() map[string]map[string]string {
 	for _, f := range d.Fields {
 		if f.Security.FieldCode != "" {
 			column := map[string]string{}
+			if value, ok := result[f.Security.SchemaCode]; ok {
+				column = value
+			}
 			column[f.Code] = f.Security.FieldCode
 			result[f.Security.SchemaCode] = column
 		}
@@ -309,17 +312,4 @@ func parseSQLType(sqlType string) string {
 	default:
 		return constants.SQLDataTypeText
 	}
-}
-
-func getQueryUpdateField(field, value, paramCode, datasetCode, typeList string) string {
-	return fmt.Sprintf(`update %s set definitions = jsonb_set(
-		definitions,
-		('{%s,'|| data_object.obj_index ||'}') ::text[],
-		'{"%s": %s}',
-		true
-		) from (
-			select index-1 as obj_index from core_datasets ,jsonb_array_elements(definitions->'%s') with ordinality arr(obj, index)
-			where ((obj->>'code') = '%s') and (code = '%s')
-		)data_object
-		where (code = '%s')`, constants.TableCoreDatasets, typeList, field, value, typeList, paramCode, datasetCode, datasetCode)
 }
