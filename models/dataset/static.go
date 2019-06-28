@@ -15,7 +15,6 @@ import (
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 )
 
@@ -24,17 +23,6 @@ type StaticDefinition struct {
 	Options   map[string]Option `json:"options"`
 	OrderType string            `json:"order_type,omitempty"`
 	Order     []string          `json:"order,omitempty"`
-}
-
-func (d *StaticDefinition) parse(payload json.RawMessage) error {
-	if err := json.Unmarshal(payload, d); err != nil {
-		return customerror.New(http.StatusBadRequest, "dataset static parse", err.Error())
-	}
-
-	if err := mdlShared.Validate.Struct(d); err != nil {
-		return customerror.New(http.StatusBadRequest, "dataset static invalid", err.Error())
-	}
-	return nil
 }
 
 // GetValueAndLabel returns the value and code columns og the dataset

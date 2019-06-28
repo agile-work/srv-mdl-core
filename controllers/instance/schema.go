@@ -3,8 +3,8 @@ package instance
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-core/models/dataset"
 	"github.com/agile-work/srv-mdl-shared/models/response"
-	"github.com/agile-work/srv-mdl-shared/models/user"
 	"github.com/go-chi/chi"
 )
 
@@ -21,27 +21,27 @@ func GetAllSchemaInstances(res http.ResponseWriter, req *http.Request) {
 
 	metadata := response.Metadata{}
 	if err := metadata.Load(req); err != nil {
-		resp.NewError("GetAllSchemaInstances metadata parse", err)
+		resp.NewError("GetDatasetInstance metadata parse", err)
 		resp.Render(res, req)
 		return
 	}
-
 	opt := metadata.GenerateDBOptions()
-	usr := &user.User{Username: req.Header.Get("username")}
-	if err := usr.Load(); err != nil {
-		resp.NewError("GetAllSchemaInstances user load", err)
+
+	ds := &dataset.Dataset{Code: chi.URLParam(req, "schema_code")}
+	if err := ds.Load(); err != nil {
+		resp.NewError("GetDatasetInstance dataset load", err)
 		resp.Render(res, req)
 		return
 	}
 
-	results, err := usr.GetSecurityInstances(chi.URLParam(req, "schema_code"), opt)
+	result, err := ds.GetUserInstances(req.Header.Get("username"), opt, nil)
 	if err != nil {
-		resp.NewError("GetAllSchemaInstances", err)
+		resp.NewError("GetDatasetInstance", err)
 		resp.Render(res, req)
 		return
 	}
 
-	resp.Data = results
+	resp.Data = result
 	resp.Metadata = metadata
 	resp.Render(res, req)
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-mdl-shared/models/user"
@@ -16,7 +17,6 @@ import (
 
 // Definition interface to represent dynamic and static dataset definition
 type Definition interface {
-	parse(payload json.RawMessage) error
 	GetValueAndLabel() (string, string)
 }
 
@@ -34,11 +34,11 @@ func (ds *Datasets) LoadAll(opt *db.Options) error {
 // Dataset defines the struct of this object
 type Dataset struct {
 	ID          string                  `json:"id" sql:"id" pk:"true"`
-	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"` // TODO: quando o tipo for schema vai receber o mesmo code de schema e os demais concatenar cst_ se já não tiver no code
 	Type        string                  `json:"type" sql:"type" updatable:"false" validate:"required"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
-	Definitions json.RawMessage         `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false" validate:"required"`
+	Definitions json.RawMessage         `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"` // TODO: estudar um jeito de validar levando em consideração o valor de outros campos
 	Active      bool                    `json:"active" sql:"active"`
 	CreatedBy   string                  `json:"created_by" sql:"created_by"`
 	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
@@ -112,8 +112,8 @@ func (ds *Dataset) Delete(trs *db.Transaction) error {
 	return nil
 }
 
-// GetInstances returns dataset instances according to type
-func (ds *Dataset) GetInstances(params map[string]interface{}, usr *user.User, opt *db.Options) ([]map[string]interface{}, error) {
+// GetUserInstances returns dataset instances according to type
+func (ds *Dataset) GetUserInstances(username string, opt *db.Options, params map[string]interface{}) ([]map[string]interface{}, error) {
 	def, err := ds.GetDefinition()
 	if err != nil {
 		return nil, customerror.New(http.StatusBadRequest, "GetBody read", err.Error())
@@ -123,31 +123,34 @@ func (ds *Dataset) GetInstances(params map[string]interface{}, usr *user.User, o
 
 	switch ds.Type {
 	case constants.DatasetDynamic:
+		usr := &user.User{Username: username}
+		if err := usr.Load(); err != nil {
+			return nil, err
+		}
+
 		dsDynDef := def.(*DynamicDefinition)
-		schema, dsQuery, values, err := dsDynDef.getInstanceInformation(params)
+		statement, err := dsDynDef.getQueryStatement(params)
 		if err != nil {
-			return nil, customerror.New(http.StatusBadRequest, "dataset dynamic get instances", err.Error())
+			return nil, customerror.New(http.StatusBadRequest, "dataset dynamic get query", err.Error())
 		}
 
-		statement, err := usr.GetSecurityQueryWithSub(schema, dsQuery, opt)
+		results, err = usr.GetSecurityInstances(dsDynDef.getSecuritySchema(), opt, statement, dsDynDef.getSecurityFields())
 		if err != nil {
-			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic get security query", err.Error())
-		}
-
-		query, _ := statement.Query()
-
-		rows, err := db.Query(builder.Raw(query, values...))
-		if err != nil {
-			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic exec query", err.Error())
-		}
-
-		results, err = usr.SecurityMapScanWithFields(schema, rows, opt, dsDynDef.getSecurityFields())
-		if err != nil {
-			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic scan", err.Error())
+			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic get intances", err.Error())
 		}
 	case constants.DatasetStatic:
 		dsStaDef := def.(*StaticDefinition)
 		results = dsStaDef.getInstances()
+	case constants.DatasetSchema:
+		usr := &user.User{Username: username}
+		if err := usr.Load(); err != nil {
+			return nil, err
+		}
+
+		results, err = usr.GetSecurityInstances(ds.Code, opt, nil, nil)
+		if err != nil {
+			return nil, customerror.New(http.StatusInternalServerError, "dataset schema get intances", err.Error())
+		}
 	}
 
 	return results, nil
@@ -158,13 +161,13 @@ func (ds *Dataset) GetDefinition() (Definition, error) {
 	switch ds.Type {
 	case constants.DatasetStatic:
 		def := &StaticDefinition{}
-		if err := def.parse(ds.Definitions); err != nil {
+		if err := parse(ds.Definitions, def); err != nil {
 			return nil, customerror.New(http.StatusBadRequest, "dataset dynamic get definition", err.Error())
 		}
 		return def, nil
 	case constants.DatasetDynamic:
 		def := &DynamicDefinition{}
-		if err := def.parse(ds.Definitions); err != nil {
+		if err := parse(ds.Definitions, def); err != nil {
 			return nil, customerror.New(http.StatusBadRequest, "dataset static get definition", err.Error())
 		}
 		return def, nil
@@ -219,6 +222,17 @@ func (ds *Dataset) ProcessDefinitions(languageCode, method string) error {
 	translation.FieldsRequestLanguageCode = "all"
 	if err := ds.setDefinition(def); err != nil {
 		return customerror.New(http.StatusBadRequest, "dataset process definition set definition", err.Error())
+	}
+	return nil
+}
+
+func parse(payload json.RawMessage, def Definition) error {
+	if err := json.Unmarshal(payload, def); err != nil {
+		return err
+	}
+
+	if err := mdlShared.Validate.Struct(def); err != nil {
+		return err
 	}
 	return nil
 }

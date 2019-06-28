@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-mdl-shared/util"
@@ -227,37 +226,24 @@ func (d *DynamicDefinition) ContainsParam(param Param) int {
 	return -1
 }
 
-func (d *DynamicDefinition) parse(payload json.RawMessage) error {
-	if err := json.Unmarshal(payload, d); err != nil {
-		return customerror.New(http.StatusBadRequest, "dataset dynamic parse", err.Error())
-	}
-
-	if err := mdlShared.Validate.Struct(d); err != nil {
-		return customerror.New(http.StatusBadRequest, "dataset dynamic invalid", err.Error())
-	}
-	return nil
-}
-
 // GetValueAndLabel returns the value and code columns og the dataset
 func (d *DynamicDefinition) GetValueAndLabel() (string, string) {
 	return "code", "label"
 }
 
-func (d *DynamicDefinition) getInstanceInformation(params map[string]interface{}) (string, string, []interface{}, error) {
+func (d *DynamicDefinition) getQueryStatement(params map[string]interface{}) (*builder.Statement, error) {
 	r := regexp.MustCompile("{{param:[^}}]*}}")
 	paramsQuery := r.FindAllString(d.Query, -1)
 	parsedQuery := d.Query
 	values := []interface{}{}
-	schema := ""
 
 	for _, p := range paramsQuery {
 		fields := strings.Split(p[0:len(p)-2], ":")
 		if len(fields) < 3 {
-			return "", "", nil, customerror.New(http.StatusBadRequest, "dataset parse query", "invalid query param")
+			return nil, customerror.New(http.StatusBadRequest, "dataset parse query", "invalid query param")
 		}
 
 		if fields[1] == "security" {
-			schema = fields[2]
 			parsedQuery = strings.Replace(parsedQuery, p, "", -1)
 			continue
 		}
@@ -280,7 +266,14 @@ func (d *DynamicDefinition) getInstanceInformation(params map[string]interface{}
 		}
 	}
 
-	return schema, parsedQuery, values, nil
+	return builder.Raw(parsedQuery, values...), nil
+}
+
+func (d *DynamicDefinition) getSecuritySchema() string {
+	r := regexp.MustCompile("{{param:security:[^}}]*}}")
+	paramSecurity := r.FindString(d.Query)
+	fields := strings.Split(paramSecurity[0:len(paramSecurity)-2], ":")
+	return fields[2]
 }
 
 func (d *DynamicDefinition) getSecurityFields() map[string]map[string]string {

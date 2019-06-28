@@ -7,7 +7,6 @@ import (
 
 	"github.com/agile-work/srv-mdl-core/models/dataset"
 	"github.com/agile-work/srv-mdl-shared/models/response"
-	"github.com/agile-work/srv-mdl-shared/models/user"
 	"github.com/go-chi/chi"
 )
 
@@ -30,13 +29,6 @@ func GetDatasetInstance(res http.ResponseWriter, req *http.Request) {
 	}
 	opt := metadata.GenerateDBOptions()
 
-	usr := &user.User{Username: req.Header.Get("username")}
-	if err := usr.Load(); err != nil {
-		resp.NewError("GetDatasetInstance user load", err)
-		resp.Render(res, req)
-		return
-	}
-
 	ds := &dataset.Dataset{Code: chi.URLParam(req, "dataset_code")}
 	if err := ds.Load(); err != nil {
 		resp.NewError("GetDatasetInstance dataset load", err)
@@ -44,7 +36,7 @@ func GetDatasetInstance(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	result, err := ds.GetInstances(params, usr, opt)
+	result, err := ds.GetUserInstances(req.Header.Get("username"), opt, params)
 	if err != nil {
 		resp.NewError("GetDatasetInstance", err)
 		resp.Render(res, req)
