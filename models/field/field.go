@@ -63,7 +63,7 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 			return customerror.New(http.StatusInternalServerError, "dataset get definition", err.Error())
 		}
 
-		fldLkpDef.LookupValue, fldLkpDef.LookupLabel = lkpDef.GetValueAndLabel()
+		// fldLkpDef.LookupValue, fldLkpDef.LookupLabel = lkpDef.GetValueAndLabel()
 		if err != nil {
 			return customerror.New(http.StatusInternalServerError, "dataset get value and label", err.Error())
 		}
