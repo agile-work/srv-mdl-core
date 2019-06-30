@@ -16,9 +16,7 @@ import (
 )
 
 // Definition interface to represent dynamic and static dataset definition
-type Definition interface {
-	GetValueAndLabel() (string, string)
-}
+type Definition interface{}
 
 // Datasets defines the array struct of this object
 type Datasets []Dataset
@@ -64,7 +62,7 @@ func (ds *Dataset) Load() error {
 		return customerror.New(http.StatusInternalServerError, "dataset load", err.Error())
 	}
 
-	def, err := ds.GetDefinition()
+	def, err := ds.getDefinition()
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "dataset get definition", err.Error())
 	}
@@ -114,7 +112,7 @@ func (ds *Dataset) Delete(trs *db.Transaction) error {
 
 // GetUserInstances returns dataset instances according to type
 func (ds *Dataset) GetUserInstances(username string, opt *db.Options, params map[string]interface{}) ([]map[string]interface{}, error) {
-	def, err := ds.GetDefinition()
+	def, err := ds.getDefinition()
 	if err != nil {
 		return nil, customerror.New(http.StatusBadRequest, "GetBody read", err.Error())
 	}
@@ -156,8 +154,8 @@ func (ds *Dataset) GetUserInstances(username string, opt *db.Options, params map
 	return results, nil
 }
 
-// GetDefinition returns the definition of the dataset according to the type
-func (ds *Dataset) GetDefinition() (Definition, error) {
+// getDefinition returns the definition of the dataset according to the type
+func (ds *Dataset) getDefinition() (Definition, error) {
 	switch ds.Type {
 	case constants.DatasetStatic:
 		def := &StaticDefinition{}
@@ -190,7 +188,7 @@ func (ds *Dataset) setDefinition(def Definition) error {
 
 // ProcessDefinitions parse generic definition to a specific type processing necessary fields
 func (ds *Dataset) ProcessDefinitions(languageCode, method string) error {
-	def, err := ds.GetDefinition()
+	def, err := ds.getDefinition()
 	if err != nil {
 		return customerror.New(http.StatusBadRequest, "dataset process definition get definition", err.Error())
 	}
@@ -204,7 +202,7 @@ func (ds *Dataset) ProcessDefinitions(languageCode, method string) error {
 		}
 		dsDynDef.UpdatedBy = ds.UpdatedBy
 		dsDynDef.UpdatedAt = ds.UpdatedAt
-		if err := dsDynDef.ParseQuery(languageCode); err != nil {
+		if err := dsDynDef.parseQuery(languageCode); err != nil {
 			return customerror.New(http.StatusBadRequest, "dataset parse query", err.Error())
 		}
 	case constants.DatasetStatic:

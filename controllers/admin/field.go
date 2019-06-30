@@ -37,7 +37,6 @@ func PostField(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	translation.FieldsRequestLanguageCode = "all"
 	if err := field.Create(trs); err != nil {
 		trs.Rollback()
 		resp.NewError("PostField", err)
@@ -55,13 +54,6 @@ func GetAllFields(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetAllFields field new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	metadata := response.Metadata{}
 	if err := metadata.Load(req); err != nil {
 		resp.NewError("GetLookupInstance metadata parse", err)
@@ -71,13 +63,11 @@ func GetAllFields(res http.ResponseWriter, req *http.Request) {
 	opt := metadata.GenerateDBOptions()
 	opt.AddCondition(builder.Equal("schema_code", chi.URLParam(req, "schema_code")))
 	fields := &field.Fields{}
-	if err := fields.LoadAll(trs, opt); err != nil {
-		trs.Rollback()
+	if err := fields.LoadAll(opt); err != nil {
 		resp.NewError("GetAllFields", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
 	resp.Data = fields
 	resp.Metadata = metadata
 	resp.Render(res, req)
@@ -88,21 +78,12 @@ func GetField(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetField field new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	field := &field.Field{SchemaCode: chi.URLParam(req, "schema_code"), Code: chi.URLParam(req, "field_code")}
-	if err := field.Load(trs); err != nil {
-		trs.Rollback()
+	if err := field.Load(); err != nil {
 		resp.NewError("GetField", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
 	resp.Data = field
 	resp.Render(res, req)
 }

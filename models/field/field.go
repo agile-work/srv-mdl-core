@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/agile-work/srv-mdl-core/models/dataset"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 
@@ -18,6 +17,7 @@ import (
 // Definition defines a interface to represent a definition by type
 type Definition interface {
 	load(payload json.RawMessage) error
+	validate() error
 }
 
 // Field defines the struct of this object
@@ -43,44 +43,15 @@ type Fields []Field
 
 // Create persists the struct creating a new object in the database
 func (f *Field) Create(trs *db.Transaction, columns ...string) error {
-	def, err := f.GetDefinition()
-	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "field processing definitions", err.Error())
+	def := f.getDefinition()
+	if err := def.load(f.Definitions); err != nil {
+		return customerror.New(http.StatusBadRequest, "load definition", err.Error())
 	}
-
-	if f.Type == constants.FieldLookup {
-		fldLkpDef := def.(*LookupDefinition)
-		lkp := dataset.Dataset{Code: fldLkpDef.LookupCode}
-		if err := lkp.Load(); err != nil {
-			return customerror.New(http.StatusInternalServerError, "dataset load", err.Error())
-		}
-		if !lkp.Active {
-			return customerror.New(http.StatusInternalServerError, "dataset load", "invalid dataset code")
-		}
-
-		lkpDef, err := lkp.GetDefinition()
-		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "dataset get definition", err.Error())
-		}
-
-		// fldLkpDef.LookupValue, fldLkpDef.LookupLabel = lkpDef.GetValueAndLabel()
-		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "dataset get value and label", err.Error())
-		}
-
-		if fldLkpDef.Type != constants.FieldDatasetStatic {
-			lkpDynDef := lkpDef.(*dataset.DynamicDefinition)
-			for _, p := range lkpDynDef.Params {
-				param := LookupParam{
-					Code:     p.Code,
-					DataType: p.DataType,
-				}
-				fldLkpDef.LookupParams = append(fldLkpDef.LookupParams, param)
-			}
-		}
+	if err := def.validate(); err != nil {
+		return customerror.New(http.StatusBadRequest, "validating definition", err.Error())
 	}
-
-	f.SetDefinition(def)
+	translation.FieldsRequestLanguageCode = "all"
+	f.setDefinition(def)
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreSchemaFields, f, columns...)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "field create", err.Error())
@@ -90,21 +61,26 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 }
 
 // LoadAll defines all instances from the object
-func (f *Fields) LoadAll(trs *db.Transaction, opt *db.Options) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemaFields, f, opt); err != nil {
+func (f *Fields) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreSchemaFields, f, opt); err != nil {
 		return customerror.New(http.StatusInternalServerError, "fields load", err.Error())
 	}
 	return nil
 }
 
 // Load defines only one object from the database
-func (f *Field) Load(trs *db.Transaction) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemaFields, f, &db.Options{Conditions: builder.And(
+func (f *Field) Load() error {
+	if err := db.SelectStruct(constants.TableCoreSchemaFields, f, &db.Options{Conditions: builder.And(
 		builder.Equal("code", f.Code),
 		builder.Equal("schema_code", f.SchemaCode),
 	)}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "field load", err.Error())
 	}
+
+	if f.Type == constants.FieldLookup {
+		// TODO: process lookup options
+	}
+
 	return nil
 }
 
@@ -163,36 +139,26 @@ func (f *Field) DeleteFieldValidation(trs *db.Transaction) error {
 	return nil
 }
 
-// SetDefinition defines the definition in field struct
-func (f *Field) SetDefinition(def Definition) {
+// setDefinition defines the definition in field struct
+func (f *Field) setDefinition(def Definition) {
 	defBytes, _ := json.Marshal(def)
 	json.Unmarshal(defBytes, &f.Definitions)
 }
 
-// GetDefinition get the definition in field struct by type
-func (f *Field) GetDefinition() (Definition, error) {
+// getDefinition get the definition in field struct by type
+func (f *Field) getDefinition() Definition {
 	switch f.Type {
 	case constants.FieldText:
-		def := &TextDefinition{}
-		err := def.load(f.Definitions)
-		return def, err
+		return &TextDefinition{}
 	case constants.FieldNumber:
-		def := &NumberDefinition{}
-		err := def.load(f.Definitions)
-		return def, err
+		return &NumberDefinition{}
 	case constants.FieldDate:
-		def := &DateDefinition{}
-		err := def.load(f.Definitions)
-		return def, err
+		return &DateDefinition{}
 	case constants.FieldLookup:
-		def := &LookupDefinition{}
-		err := def.load(f.Definitions)
-		return def, err
+		return &LookupDefinition{}
 	case constants.FieldAttachment:
-		def := &AttachmentDefinition{}
-		err := def.load(f.Definitions)
-		return def, err
+		return &AttachmentDefinition{}
 	default:
-		return nil, customerror.New(http.StatusInternalServerError, "field get definition", "invalid field type")
+		return nil
 	}
 }

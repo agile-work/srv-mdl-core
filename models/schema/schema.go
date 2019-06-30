@@ -85,8 +85,8 @@ func (s *Schemas) LoadAll(trs *db.Transaction, opt *db.Options) error {
 }
 
 // Load defines only one object from the database
-func (s *Schema) Load(trs *db.Transaction) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemas, s, &db.Options{
+func (s *Schema) Load() error {
+	if err := db.SelectStruct(constants.TableCoreSchemas, s, &db.Options{
 		Conditions: builder.Equal("code", s.Code),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "schema load", err.Error())

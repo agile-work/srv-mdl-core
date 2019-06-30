@@ -25,11 +25,6 @@ type StaticDefinition struct {
 	Order     []string          `json:"order,omitempty"`
 }
 
-// GetValueAndLabel returns the value and code columns og the dataset
-func (d *StaticDefinition) GetValueAndLabel() (string, string) {
-	return "code", "label"
-}
-
 func (d *StaticDefinition) getInstances() []map[string]interface{} {
 	result := []map[string]interface{}{}
 	for _, code := range d.Order {

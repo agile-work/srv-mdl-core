@@ -83,21 +83,13 @@ func GetSchema(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetSchema schema new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	schema := &schema.Schema{Code: chi.URLParam(req, "schema_code")}
-	if err := schema.Load(trs); err != nil {
-		trs.Rollback()
+	if err := schema.Load(); err != nil {
 		resp.NewError("GetSchema", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
+
 	resp.Data = schema
 	resp.Render(res, req)
 }

@@ -18,16 +18,20 @@ type NumberScale struct {
 	LookupCode       string                 `json:"lookup_code" validate:"required"`
 	LookupLabel      string                 `json:"lookup_label"`
 	LookupValue      string                 `json:"lookup_value"`
-	LookupParams     []LookupParam          `json:"lookup_params,omitempty"`
+	LookupParams     []lookupParam          `json:"lookup_params,omitempty"`
 	AggregationRates map[string]interface{} `json:"aggr_rates"`
 }
 
-func (d *NumberDefinition) load(payload json.RawMessage) error {
-	if err := json.Unmarshal(payload, d); err != nil {
+func (n *NumberDefinition) load(payload json.RawMessage) error {
+	if err := json.Unmarshal(payload, n); err != nil {
 		return err
 	}
 
-	if err := mdlShared.Validate.Struct(d); err != nil {
+	return nil
+}
+
+func (n *NumberDefinition) validate() error {
+	if err := mdlShared.Validate.Struct(n); err != nil {
 		return err
 	}
 	return nil

@@ -38,7 +38,7 @@ func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode string)
 		return customerror.New(http.StatusInternalServerError, "validate dataset", "invalid dataset code")
 	}
 
-	def, err := ds.GetDefinition()
+	def, err := ds.getDefinition()
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "validate dataset get definition", err.Error())
 	}
@@ -47,41 +47,11 @@ func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode string)
 		return customerror.New(http.StatusBadRequest, "validate dataset", "invalid query")
 	}
 
-	if err := d.ParseQuery(translation.FieldsRequestLanguageCode); err != nil {
+	if err := d.parseQuery(translation.FieldsRequestLanguageCode); err != nil {
 		return customerror.New(http.StatusBadRequest, "dataset parse query", err.Error())
 	}
 
 	dsDynDef := def.(*DynamicDefinition)
-
-	// // TODO: Activate this validation when implementing publish dataset
-	// if len(currentDynamicDataset.Fields) > len(d.Fields) || len(currentDynamicDataset.Params) > len(d.Params) {
-	// 	response.Code = http.StatusInternalServerError
-	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorParsingRequest, "UpdateDatasetQuery validation", "can't change query structure"))
-
-	// 	return response
-	// }
-
-	// errors := []string{}
-
-	// for _, f := range currentDynamicDataset.Fields {
-	// 	if !d.ContainsField(f) {
-	// 		errors = append(errors, f.Code)
-	// 	}
-	// }
-
-	// for _, p := range currentDynamicDataset.Params {
-	// 	if d.ContainsParam(p) == -1 {
-	// 		errors = append(errors, p.Code)
-	// 	}
-	// }
-
-	// if len(errors) > 0 {
-	// 	msg := fmt.Sprintf("can't change query structure, invalid: %s", strings.Join(errors, ", "))
-	// 	response.Code = http.StatusInternalServerError
-	// 	response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorInsertingRecord, "UpdateDatasetQuery validation", msg))
-
-	// 	return response
-	// }
 
 	for _, f := range d.Fields {
 		if !dsDynDef.ContainsField(f) {
@@ -119,8 +89,8 @@ func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode string)
 	return nil
 }
 
-// ParseQuery validate query and get fields and params from query
-func (d *DynamicDefinition) ParseQuery(languageCode string) error {
+// parseQuery validate query and get fields and params from query
+func (d *DynamicDefinition) parseQuery(languageCode string) error {
 	r := regexp.MustCompile("{{param:[^}}]*}}")
 	params := r.FindAllString(d.Query, -1)
 	params = util.Unique(params)
@@ -224,11 +194,6 @@ func (d *DynamicDefinition) ContainsParam(param Param) int {
 		}
 	}
 	return -1
-}
-
-// GetValueAndLabel returns the value and code columns og the dataset
-func (d *DynamicDefinition) GetValueAndLabel() (string, string) {
-	return "code", "label"
 }
 
 func (d *DynamicDefinition) getQueryStatement(params map[string]interface{}) (*builder.Statement, error) {

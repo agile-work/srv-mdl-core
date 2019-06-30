@@ -18,6 +18,10 @@ func (d *DateDefinition) load(payload json.RawMessage) error {
 		return err
 	}
 
+	return nil
+}
+
+func (d *DateDefinition) validate() error {
 	if err := mdlShared.Validate.Struct(d); err != nil {
 		return err
 	}

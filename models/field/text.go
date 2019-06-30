@@ -11,12 +11,16 @@ type TextDefinition struct {
 	Display string `json:"display" validate:"required"` // single_line, multi_line, readonly, enter_once, url
 }
 
-func (d *TextDefinition) load(payload json.RawMessage) error {
-	if err := json.Unmarshal(payload, d); err != nil {
+func (t *TextDefinition) load(payload json.RawMessage) error {
+	if err := json.Unmarshal(payload, t); err != nil {
 		return err
 	}
 
-	if err := mdlShared.Validate.Struct(d); err != nil {
+	return nil
+}
+
+func (t *TextDefinition) validate() error {
+	if err := mdlShared.Validate.Struct(t); err != nil {
 		return err
 	}
 	return nil
