@@ -13,7 +13,7 @@ import (
 
 // LookupDefinition defines custom attributes for the lookup type
 type LookupDefinition struct {
-	Display        string            `json:"display" validate:"required"`     // select_single, select_multiple, checkbox, radio_buttons
+	Display        string            `json:"display" validate:"required"`     // select_single, select_multiple, radio_buttons, checkboxes
 	Type           string            `json:"lookup_type" validate:"required"` // static, dynamic, tree, security
 	LookupLabel    string            `json:"lookup_label" validate:"required"`
 	LookupValue    string            `json:"lookup_value" validate:"required"`
@@ -33,7 +33,6 @@ type lookupParam struct {
 
 type lookupField struct {
 	Code     string                  `json:"code"`
-	DataType string                  `json:"data_type"`
 	Label    translation.Translation `json:"label"`
 	Filter   lookupFieldFilter       `json:"filter"`
 }
@@ -41,12 +40,17 @@ type lookupField struct {
 type lookupFieldFilter struct {
 	ValueType string      `json:"value_type"` // column, constant
 	Value     interface{} `json:"value"`
+	Operator  string      `json:"operator"`
 	Readonly  bool        `json:"readonly"`
 }
 
 func (d *LookupDefinition) load(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, d); err != nil {
 		return err
+	}
+	if d.Type == constants.FieldLookupStatic {
+		d.LookupLabel = "label"
+		d.LookupValue = "code"
 	}
 	return nil
 }
