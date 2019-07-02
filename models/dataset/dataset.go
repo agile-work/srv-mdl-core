@@ -2,6 +2,7 @@ package dataset
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -228,22 +229,11 @@ func (ds *Dataset) ProcessDefinitions(languageCode, method string) error {
 	return nil
 }
 
-func parse(payload json.RawMessage, def Definition) error {
-	if err := json.Unmarshal(payload, def); err != nil {
-		return err
-	}
-
-	if err := mdlShared.Validate.Struct(def); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Validate checks if dataset exists, if has the correct type
 // and if has all the columns and params defined
 func Validate(code string, isStaticDataset bool, columns, params []string) error {
 	ds := Dataset{Code: code}
-	if err != ds.Load(); err != nil {
+	if err := ds.Load(); err != nil {
 		return err
 	}
 
@@ -260,11 +250,12 @@ func Validate(code string, isStaticDataset bool, columns, params []string) error
 	}
 
 	invalidColumns := []string{}
-	msgParams = ""
+	msgParams := ""
 
-	if !isStaticDataset && strings.HasPrefix(code, "ds_") {
+	switch ds.Type {
+	case constants.DatasetDynamic:
 		def := &DynamicDefinition{}
-		if err := json.Unmarshal(payload, def); err != nil {
+		if err := json.Unmarshal(ds.Definitions, def); err != nil {
 			return err
 		}
 
@@ -273,47 +264,72 @@ func Validate(code string, isStaticDataset bool, columns, params []string) error
 				if f.Code == col {
 					// TODO: break nested for with label
 				}
-			{
-			invalidColumns = append(invalidColumns, col)	
+			}
+			invalidColumns = append(invalidColumns, col)
 		}
 
 		if params != nil && len(params) > 0 {
 			invalidParams := []string{}
 			for _, param := range params {
 				for _, f := range def.Fields {
-					if f.Code == col {
+					if f.Code == param {
 						// TODO: break nested for with label
 					}
-				{
-				invalidParams = append(invalidParams, col)	
+				}
+				invalidParams = append(invalidParams, param)
 			}
 			if len(invalidParams) > 0 {
 				msgParams = fmt.Sprintf("invalid params (%s)", strings.Join(invalidParams, ","))
 			}
 		}
-
-	} else {
-		fields := Fields{}
-		fields.LoadAll(&db.Options{
-			Conditions: builder.Equals("code", code),
-		})
-
+	case constants.DatasetSchema:
+		fields, err := getFieldsCodes(code)
+		if err != nil {
+			return err
+		}
 		for _, col := range columns {
-			for _, f := range fields {
-				if f.Code == col {
-					// TODO: break nested for with label
+			for _, fieldCode := range fields {
+				if fieldCode == col {
+					break
 				}
-			{
-			invalidColumns = append(invalidColumns, col)	
+			}
+			invalidColumns = append(invalidColumns, col)
 		}
 	}
 
 	if len(invalidColumns) > 0 {
 		msg := fmt.Sprintf("invalid fields (%s) %s", strings.Join(invalidColumns, ","), msgParams)
-		return customerror.New(http.StatusBadRequest, "dataset validate", msg) 
+		return customerror.New(http.StatusBadRequest, "dataset validate", msg)
 	} else if msgParams != "" {
-		return customerror.New(http.StatusBadRequest, "dataset validate", msgParams) 
+		return customerror.New(http.StatusBadRequest, "dataset validate", msgParams)
 	}
 
+	return nil
+}
+
+func getFieldsCodes(code string) ([]string, error) {
+	codes := []string{}
+	statement := builder.Select("code").From(constants.TableCoreSchemaFields).Where(builder.Equal("schema_code", code))
+	rows, err := db.Query(statement)
+	if err != nil {
+		return nil, err
+	}
+	fieldCodes, _ := db.MapScan(rows)
+	for _, row := range fieldCodes {
+		for _, v := range row {
+			codes = append(codes, v.(string))
+		}
+	}
+	return codes, nil
+}
+
+func parse(payload json.RawMessage, def Definition) error {
+	if err := json.Unmarshal(payload, def); err != nil {
+		return err
+	}
+
+	if err := mdlShared.Validate.Struct(def); err != nil {
+		return err
+	}
 	return nil
 }

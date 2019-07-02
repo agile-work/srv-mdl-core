@@ -18,8 +18,8 @@ func (d *DateDefinition) parse(payload json.RawMessage) error {
 		return err
 	}
 
-	if d.Format == "" {
-		d.Format = "DD-MM-YYYY HH:MM:SS"
+	if len(d.Format.Language) <= 0 {
+		d.Format.Language[translation.SystemDefaultLanguageCode] = "DD-MM-YYYY HH:MM:SS"
 	}
 
 	return nil

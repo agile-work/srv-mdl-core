@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/agile-work/srv-mdl-core/models/dataset"
+	"github.com/agile-work/srv-mdl-core/models/group"
 	"github.com/agile-work/srv-mdl-shared/models/response"
+	"github.com/agile-work/srv-shared/constants"
 
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 
@@ -31,9 +34,9 @@ type lookupParam struct {
 }
 
 type lookupField struct {
-	Code     string                  `json:"code"`
-	Label    translation.Translation `json:"label"`
-	Filter   lookupFieldFilter       `json:"filter"`
+	Code   string                  `json:"code"`
+	Label  translation.Translation `json:"label"`
+	Filter lookupFieldFilter       `json:"filter"`
 }
 
 type lookupFieldFilter struct {
@@ -59,7 +62,7 @@ func (d *LookupDefinition) prepare() error {
 		return err
 	}
 
-	if d.Type != constants.FieldLookupStatic 
+	if d.Type != constants.FieldLookupStatic {
 		if len(d.LookupFields) <= 0 {
 			return fmt.Errorf("%s lookup without fields", d.Type)
 		}
@@ -73,7 +76,7 @@ func (d *LookupDefinition) prepare() error {
 			params = append(params, p.Code)
 		}
 
-		if err := dataset.Validate(d.DatasetCode, false, columns, params); err!= nil {
+		if err := dataset.Validate(d.DatasetCode, false, columns, params); err != nil {
 			return err
 		}
 
@@ -86,7 +89,7 @@ func (d *LookupDefinition) prepare() error {
 			}
 		}
 	} else {
-		if err := dataset.Validate(d.DatasetCode, true, nil, nil); err!= nil {
+		if err := dataset.Validate(d.DatasetCode, true, nil, nil); err != nil {
 			return err
 		}
 	}

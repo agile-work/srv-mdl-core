@@ -3,14 +3,16 @@ package field
 import (
 	"encoding/json"
 
+	"github.com/agile-work/srv-mdl-core/models/dataset"
 	mdlShared "github.com/agile-work/srv-mdl-shared"
+	"github.com/agile-work/srv-shared/constants"
 )
 
 // NumberDefinition defines custom attributes for the number type
 type NumberDefinition struct {
-	Display  string      `json:"display" validate:"required"` // percentage, number, money
-	Decimals int         `json:"decimals"`
-	Scale    NumberScale `json:"scale,omitempty"`
+	Display  string       `json:"display" validate:"required"` // percentage, number, money
+	Decimals int          `json:"decimals"`
+	Scale    *NumberScale `json:"scale,omitempty"`
 }
 
 // NumberScale defines a static dataset to define a custom scale to a number field
@@ -24,7 +26,7 @@ func (n *NumberDefinition) parse(payload json.RawMessage) error {
 		return err
 	}
 
-	if n.Display == FieldNumberDisplayMoney {
+	if n.Display == constants.FieldNumberDisplayMoney {
 		n.Scale.DatasetCode = "ds_currencies"
 		n.Scale.AggregationRates = nil
 	}
@@ -36,7 +38,10 @@ func (n *NumberDefinition) prepare() error {
 	if err := mdlShared.Validate.Struct(n); err != nil {
 		return err
 	}
-	if err := dataset.Validate(d.DatasetCode, true, nil, nil); err!= nil {
+	if n.Scale == nil {
+		return nil
+	}
+	if err := dataset.Validate(n.Scale.DatasetCode, true, nil, nil); err != nil {
 		return err
 	}
 	return nil
