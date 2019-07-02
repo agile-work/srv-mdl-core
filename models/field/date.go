@@ -13,15 +13,19 @@ type DateDefinition struct {
 	Format  translation.Translation `json:"format"`
 }
 
-func (d *DateDefinition) load(payload json.RawMessage) error {
+func (d *DateDefinition) parse(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, d); err != nil {
 		return err
+	}
+
+	if d.Format == "" {
+		d.Format = "DD-MM-YYYY HH:MM:SS"
 	}
 
 	return nil
 }
 
-func (d *DateDefinition) validate() error {
+func (d *DateDefinition) prepare() error {
 	if err := mdlShared.Validate.Struct(d); err != nil {
 		return err
 	}

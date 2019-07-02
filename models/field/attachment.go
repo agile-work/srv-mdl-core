@@ -15,7 +15,7 @@ type AttachmentDefinition struct {
 	FileTypeWhiteList []string `json:"file_type_white_list"`
 }
 
-func (a *AttachmentDefinition) load(payload json.RawMessage) error {
+func (a *AttachmentDefinition) parse(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, a); err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func (a *AttachmentDefinition) load(payload json.RawMessage) error {
 	return nil
 }
 
-func (a *AttachmentDefinition) validate() error {
+func (a *AttachmentDefinition) prepare() error {
 	if err := mdlShared.Validate.Struct(a); err != nil {
 		return err
 	}

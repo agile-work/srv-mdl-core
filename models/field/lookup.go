@@ -26,7 +26,6 @@ type LookupDefinition struct {
 
 type lookupParam struct {
 	Code      string      `json:"code"`
-	DataType  string      `json:"data_type"`
 	ValueType string      `json:"value_type"` // column, constant
 	Value     interface{} `json:"value"`
 }
@@ -44,7 +43,7 @@ type lookupFieldFilter struct {
 	Readonly  bool        `json:"readonly"`
 }
 
-func (d *LookupDefinition) load(payload json.RawMessage) error {
+func (d *LookupDefinition) parse(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, d); err != nil {
 		return err
 	}
@@ -55,28 +54,57 @@ func (d *LookupDefinition) load(payload json.RawMessage) error {
 	return nil
 }
 
-func (d *LookupDefinition) validate() error {
+func (d *LookupDefinition) prepare() error {
 	if err := mdlShared.Validate.Struct(d); err != nil {
 		return err
 	}
-	if len(d.LookupFields) <= 0 {
-		return fmt.Errorf("lookup without fields")
+
+	if d.Type != constants.FieldLookupStatic 
+		if len(d.LookupFields) <= 0 {
+			return fmt.Errorf("%s lookup without fields", d.Type)
+		}
+
+		columns := []string{}
+		for _, f := range d.LookupFields {
+			columns = append(columns, f.Code)
+		}
+		params := []string{}
+		for _, p := range d.LookupParams {
+			params = append(params, p.Code)
+		}
+
+		if err := dataset.Validate(d.DatasetCode, false, columns, params); err!= nil {
+			return err
+		}
+
+		if d.Type == constants.FieldLookupSecurity {
+			if len(d.SecurityGroups) <= 0 {
+				return fmt.Errorf("security lookup without security groups")
+			}
+			if err := group.Validate(d.SecurityGroups); err != nil {
+				return err
+			}
+		}
+	} else {
+		if err := dataset.Validate(d.DatasetCode, true, nil, nil); err!= nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-// UpdateLookupParam inset if not exists or change param
+// UpdateLookupParam insert if not exists or change param
 func (d *LookupDefinition) UpdateLookupParam() error {
 	return nil
 }
 
-// UpdateLookupField inset if not exists or change field
+// UpdateLookupField insert if not exists or change field
 func (d *LookupDefinition) UpdateLookupField() error {
 	return nil
 }
 
-// UpdateSecurityGroup inset if not exists or change security group
+// UpdateSecurityGroup insert if not exists or change security group
 func (d *LookupDefinition) UpdateSecurityGroup() error {
 	return nil
 }

@@ -13,25 +13,30 @@ type NumberDefinition struct {
 	Scale    NumberScale `json:"scale,omitempty"`
 }
 
-// NumberScale defines a lookup to define a custom scale to a number field
+// NumberScale defines a static dataset to define a custom scale to a number field
 type NumberScale struct {
-	LookupCode       string                 `json:"lookup_code" validate:"required"`
-	LookupLabel      string                 `json:"lookup_label"`
-	LookupValue      string                 `json:"lookup_value"`
-	LookupParams     []lookupParam          `json:"lookup_params,omitempty"`
-	AggregationRates map[string]interface{} `json:"aggr_rates"`
+	DatasetCode      string                        `json:"dataset_code" validate:"required"`
+	AggregationRates map[string]map[string]float32 `json:"aggr_rates,omitempty"`
 }
 
-func (n *NumberDefinition) load(payload json.RawMessage) error {
+func (n *NumberDefinition) parse(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, n); err != nil {
 		return err
+	}
+
+	if n.Display == FieldNumberDisplayMoney {
+		n.Scale.DatasetCode = "ds_currencies"
+		n.Scale.AggregationRates = nil
 	}
 
 	return nil
 }
 
-func (n *NumberDefinition) validate() error {
+func (n *NumberDefinition) prepare() error {
 	if err := mdlShared.Validate.Struct(n); err != nil {
+		return err
+	}
+	if err := dataset.Validate(d.DatasetCode, true, nil, nil); err!= nil {
 		return err
 	}
 	return nil

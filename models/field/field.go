@@ -16,8 +16,19 @@ import (
 
 // Definition defines a interface to represent a definition by type
 type Definition interface {
-	load(payload json.RawMessage) error
-	validate() error
+	parse(payload json.RawMessage) error
+	prepare() error
+}
+
+// Fields defines the array struct of this object
+type Fields []Field
+
+// LoadAll defines all instances from the object
+func (f *Fields) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreSchemaFields, f, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "fields load", err.Error())
+	}
+	return nil
 }
 
 // Field defines the struct of this object
@@ -38,16 +49,13 @@ type Field struct {
 	UpdatedAt    time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
-// Fields defines the array struct of this object
-type Fields []Field
-
 // Create persists the struct creating a new object in the database
 func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 	def := f.getDefinition()
-	if err := def.load(f.Definitions); err != nil {
+	if err := def.parse(f.Definitions); err != nil {
 		return customerror.New(http.StatusBadRequest, "load definition", err.Error())
 	}
-	if err := def.validate(); err != nil {
+	if err := def.prepare(); err != nil {
 		return customerror.New(http.StatusBadRequest, "validating definition", err.Error())
 	}
 	translation.FieldsRequestLanguageCode = "all"
@@ -57,14 +65,6 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 		return customerror.New(http.StatusInternalServerError, "field create", err.Error())
 	}
 	f.ID = id
-	return nil
-}
-
-// LoadAll defines all instances from the object
-func (f *Fields) LoadAll(opt *db.Options) error {
-	if err := db.SelectStruct(constants.TableCoreSchemaFields, f, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "fields load", err.Error())
-	}
 	return nil
 }
 
@@ -121,21 +121,6 @@ func (f *Field) Delete(trs *db.Transaction) error {
 	)}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "field delete", err.Error())
 	}
-	return nil
-}
-
-// AddFieldValidation include a new validation to a field
-func (f *Field) AddFieldValidation(trs *db.Transaction) error {
-	return nil
-}
-
-// UpdateFieldValidation update the validation attributes
-func (f *Field) UpdateFieldValidation(trs *db.Transaction) error {
-	return nil
-}
-
-// DeleteFieldValidation delete a validation from the database
-func (f *Field) DeleteFieldValidation(trs *db.Transaction) error {
 	return nil
 }
 

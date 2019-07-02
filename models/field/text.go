@@ -11,7 +11,7 @@ type TextDefinition struct {
 	Display string `json:"display" validate:"required"` // single_line, multi_line, readonly, enter_once, url
 }
 
-func (t *TextDefinition) load(payload json.RawMessage) error {
+func (t *TextDefinition) parse(payload json.RawMessage) error {
 	if err := json.Unmarshal(payload, t); err != nil {
 		return err
 	}
@@ -19,7 +19,7 @@ func (t *TextDefinition) load(payload json.RawMessage) error {
 	return nil
 }
 
-func (t *TextDefinition) validate() error {
+func (t *TextDefinition) prepare() error {
 	if err := mdlShared.Validate.Struct(t); err != nil {
 		return err
 	}

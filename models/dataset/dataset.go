@@ -62,6 +62,10 @@ func (ds *Dataset) Load() error {
 		return customerror.New(http.StatusInternalServerError, "dataset load", err.Error())
 	}
 
+	if ds.ID == "" {
+		return customerror.New(http.StatusNotFound, "dataset load", "not found")
+	}
+
 	def, err := ds.getDefinition()
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "dataset get definition", err.Error())
@@ -232,5 +236,84 @@ func parse(payload json.RawMessage, def Definition) error {
 	if err := mdlShared.Validate.Struct(def); err != nil {
 		return err
 	}
+	return nil
+}
+
+// Validate checks if dataset exists, if has the correct type
+// and if has all the columns and params defined
+func Validate(code string, isStaticDataset bool, columns, params []string) error {
+	ds := Dataset{Code: code}
+	if err != ds.Load(); err != nil {
+		return err
+	}
+
+	if !ds.Active {
+		return customerror.New(http.StatusBadRequest, "dataset validate", "deactivated dataset")
+	}
+
+	if isStaticDataset && ds.Type != constants.DatasetStatic {
+		return customerror.New(http.StatusBadRequest, "dataset validate", "invalid type")
+	}
+
+	if isStaticDataset {
+		return nil
+	}
+
+	invalidColumns := []string{}
+	msgParams = ""
+
+	if !isStaticDataset && strings.HasPrefix(code, "ds_") {
+		def := &DynamicDefinition{}
+		if err := json.Unmarshal(payload, def); err != nil {
+			return err
+		}
+
+		for _, col := range columns {
+			for _, f := range def.Fields {
+				if f.Code == col {
+					// TODO: break nested for with label
+				}
+			{
+			invalidColumns = append(invalidColumns, col)	
+		}
+
+		if params != nil && len(params) > 0 {
+			invalidParams := []string{}
+			for _, param := range params {
+				for _, f := range def.Fields {
+					if f.Code == col {
+						// TODO: break nested for with label
+					}
+				{
+				invalidParams = append(invalidParams, col)	
+			}
+			if len(invalidParams) > 0 {
+				msgParams = fmt.Sprintf("invalid params (%s)", strings.Join(invalidParams, ","))
+			}
+		}
+
+	} else {
+		fields := Fields{}
+		fields.LoadAll(&db.Options{
+			Conditions: builder.Equals("code", code),
+		})
+
+		for _, col := range columns {
+			for _, f := range fields {
+				if f.Code == col {
+					// TODO: break nested for with label
+				}
+			{
+			invalidColumns = append(invalidColumns, col)	
+		}
+	}
+
+	if len(invalidColumns) > 0 {
+		msg := fmt.Sprintf("invalid fields (%s) %s", strings.Join(invalidColumns, ","), msgParams)
+		return customerror.New(http.StatusBadRequest, "dataset validate", msg) 
+	} else if msgParams != "" {
+		return customerror.New(http.StatusBadRequest, "dataset validate", msgParams) 
+	}
+
 	return nil
 }

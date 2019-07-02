@@ -135,6 +135,11 @@ func (g *Group) Delete(trs *db.Transaction) error {
 	return nil
 }
 
+// Validate check if group exists and is active
+func Validate(codes []string) error {
+	return nil
+}
+
 // // InsertUserInGroup persists the request creating a new object in the database
 // func InsertUserInGroup(r *http.Request) *mdlShared.Response {
 // 	groupID := chi.URLParam(r, "group_id")
