@@ -17,7 +17,6 @@ import (
 // Schema defines the struct of this object
 type Schema struct {
 	ID          string                  `json:"id" sql:"id" pk:"true"`
-	JobID       string                  `json:"job_id" sql:"job_id" fk:"true"`
 	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
@@ -63,14 +62,11 @@ func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 		"schema_code": s.Code,
 	}
 
-	id, err = job.CreateInstance(s.CreatedBy, constants.JobSystemCreateSchema, params)
+	jobInstance := job.JobInstance{}
+
+	id, err = jobInstance.Create(trs, s.CreatedBy, constants.JobSystemCreateSchema, params)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "schema create job execution", err.Error())
-	}
-
-	s.JobID = id
-	if err := s.Update(trs, []string{"job_id"}, nil); err != nil {
-		return customerror.New(http.StatusInternalServerError, "schema create update job id", err.Error())
 	}
 
 	return nil
@@ -143,7 +139,9 @@ func (s *Schema) CallDelete(trs *db.Transaction) error {
 		"schema_code": s.Code,
 	}
 
-	if _, err := job.CreateInstance(s.UpdatedBy, constants.JobSystemDeleteSchema, params); err != nil {
+	jobInstance := job.JobInstance{}
+
+	if _, err := jobInstance.Create(trs, s.UpdatedBy, constants.JobSystemDeleteSchema, params); err != nil {
 		return customerror.New(http.StatusInternalServerError, "schema delete job execution", err.Error())
 	}
 

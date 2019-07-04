@@ -98,12 +98,12 @@ func (d *LookupDefinition) prepare() error {
 }
 
 // UpdateLookupParam insert if not exists or change param
-func (d *LookupDefinition) UpdateLookupParam() error {
+func (d *LookupDefinition) UpdateLookupParam() error { // TODO: Passar sempre todos os parâmetros
 	return nil
 }
 
-// UpdateLookupField insert if not exists or change field
-func (d *LookupDefinition) UpdateLookupField() error {
+// UpdateLookupField change field
+func (d *LookupDefinition) UpdateLookupField() error { // TODO: passar sempre todos os fields
 	return nil
 }
 
