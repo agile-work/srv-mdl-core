@@ -108,6 +108,11 @@ func (d *DynamicDefinition) parseQuery(languageCode string) error {
 			continue
 		}
 
+		if fields[1] == "user" && fields[2] == "language" {
+			parsedQuery = strings.Replace(parsedQuery, p, "'all'", -1)
+			continue
+		}
+
 		param.Code = fields[1]
 		if paramCodeExists(d.Params, param.Code) {
 			return customerror.New(http.StatusBadRequest, "dataset parse query", "invalid query param, duplicated code "+param.Code)
@@ -196,7 +201,7 @@ func (d *DynamicDefinition) ContainsParam(param Param) int {
 	return -1
 }
 
-func (d *DynamicDefinition) getQueryStatement(params map[string]interface{}) (*builder.Statement, error) {
+func (d *DynamicDefinition) getQueryStatement(languageCode string, params map[string]interface{}) (*builder.Statement, error) {
 	r := regexp.MustCompile("{{param:[^}}]*}}")
 	paramsQuery := r.FindAllString(d.Query, -1)
 	parsedQuery := d.Query
@@ -210,6 +215,12 @@ func (d *DynamicDefinition) getQueryStatement(params map[string]interface{}) (*b
 
 		if fields[1] == "security" {
 			parsedQuery = strings.Replace(parsedQuery, p, "", -1)
+			continue
+		}
+
+		if fields[1] == "user" && fields[2] == "language" {
+			parsedQuery = strings.Replace(parsedQuery, p, "?", -1)
+			values = append(values, languageCode)
 			continue
 		}
 
@@ -235,10 +246,14 @@ func (d *DynamicDefinition) getQueryStatement(params map[string]interface{}) (*b
 }
 
 func (d *DynamicDefinition) getSecuritySchema() string {
+	securitySchema := ""
 	r := regexp.MustCompile("{{param:security:[^}}]*}}")
 	paramSecurity := r.FindString(d.Query)
-	fields := strings.Split(paramSecurity[0:len(paramSecurity)-2], ":")
-	return fields[2]
+	if paramSecurity != "" {
+		fields := strings.Split(paramSecurity[0:len(paramSecurity)-2], ":")
+		securitySchema = fields[2]
+	}
+	return securitySchema
 }
 
 func (d *DynamicDefinition) getSecurityFields() map[string]map[string]string {

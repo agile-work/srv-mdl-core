@@ -132,14 +132,28 @@ func (ds *Dataset) GetUserInstances(username string, opt *db.Options, params map
 		}
 
 		dsDynDef := def.(*DynamicDefinition)
-		statement, err := dsDynDef.getQueryStatement(params)
+		statement, err := dsDynDef.getQueryStatement(usr.LanguageCode, params)
 		if err != nil {
 			return nil, customerror.New(http.StatusBadRequest, "dataset dynamic get query", err.Error())
 		}
 
-		results, err = usr.GetSecurityInstances(dsDynDef.getSecuritySchema(), opt, statement, dsDynDef.getSecurityFields())
+		securitySchema := dsDynDef.getSecuritySchema()
+
+		if securitySchema != "" {
+			results, err = usr.GetSecurityInstances(securitySchema, opt, statement, dsDynDef.getSecurityFields())
+			if err != nil {
+				return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic get intances", err.Error())
+			}
+		}
+
+		rows, err := db.Query(statement)
 		if err != nil {
-			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic get intances", err.Error())
+			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic query exec", err.Error())
+		}
+
+		results, err = db.MapScan(rows)
+		if err != nil {
+			return nil, customerror.New(http.StatusInternalServerError, "dataset dynamic query map scan", err.Error())
 		}
 	case constants.DatasetStatic:
 		dsStaDef := def.(*StaticDefinition)
