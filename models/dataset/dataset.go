@@ -273,10 +273,11 @@ func Validate(code string, isStaticDataset bool, columns, params []string) error
 			return err
 		}
 
+	LoopColumns:
 		for _, col := range columns {
 			for _, f := range def.Fields {
 				if f.Code == col {
-					// TODO: break nested for with label
+					continue LoopColumns
 				}
 			}
 			invalidColumns = append(invalidColumns, col)
@@ -284,10 +285,11 @@ func Validate(code string, isStaticDataset bool, columns, params []string) error
 
 		if params != nil && len(params) > 0 {
 			invalidParams := []string{}
+		LoopParams:
 			for _, param := range params {
 				for _, f := range def.Fields {
 					if f.Code == param {
-						// TODO: break nested for with label
+						continue LoopParams
 					}
 				}
 				invalidParams = append(invalidParams, param)

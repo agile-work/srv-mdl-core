@@ -27,8 +27,10 @@ func (n *NumberDefinition) parse(payload json.RawMessage) error {
 	}
 
 	if n.Display == constants.FieldNumberDisplayMoney {
-		n.Scale.DatasetCode = "ds_currencies"
-		n.Scale.AggregationRates = nil
+		n.Scale = &NumberScale{
+			DatasetCode:      "ds_currencies",
+			AggregationRates: nil,
+		}
 	}
 
 	return nil

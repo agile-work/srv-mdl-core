@@ -1,7 +1,7 @@
 package admin
 
 import (
-	controller "github.com/agile-work/srv-mdl-core/controllers/admin"
+	controller "github.com/agile-work/srv-mdl-core/controllers/admin/tree"
 	"github.com/go-chi/chi"
 )
 
@@ -13,25 +13,25 @@ func TreeRoutes() *chi.Mux {
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", controller.PostTree)
 		r.Get("/", controller.GetAllTrees)
-		r.Get("/{tree_id}", controller.GetTree)
-		r.Patch("/{tree_id}", controller.UpdateTree)
-		r.Delete("/{tree_id}", controller.DeleteTree)
+		r.Get("/{tree_code}", controller.GetTree)
+		r.Patch("/{tree_code}", controller.UpdateTree)
+		r.Delete("/{tree_code}", controller.DeleteTree)
 		// Units
-		r.Post("/{tree_id}/units", controller.PostTreeUnit)
-		r.Get("/{tree_id}/units", controller.GetAllTreeUnits)
-		r.Get("/{tree_id}/units/{tree_unit_id}", controller.GetTreeUnit)
-		r.Patch("/{tree_id}/units/{tree_unit_id}", controller.UpdateTreeUnit)
-		r.Delete("/{tree_id}/units/{tree_unit_id}", controller.DeleteTreeUnit)
+		r.Post("/{tree_code}/units", controller.PostUnit)
+		r.Get("/{tree_code}/units", controller.GetAllUnits)
+		r.Get("/{tree_code}/units/{unit_code}", controller.GetUnit)
+		r.Patch("/{tree_code}/units/{unit_code}", controller.UpdateUnit)
+		r.Delete("/{tree_code}/units/{unit_code}", controller.DeleteUnit)
 		// Permissions
-		r.Get("/{tree_id}/units/{tree_unit_id}/permissions", controller.GetAllTreeUnitPermissions)
-		r.Post("/{tree_id}/units/{tree_unit_id}/permissions", controller.PostTreeUnitPermission)
-		r.Delete("/{tree_id}/units/{tree_unit_id}/permissions/{permission_id}", controller.DeleteTreeUnitPermission)
+		// r.Get("/{tree_code}/units/{unit_code}/permissions", controller.GetAllUnitPermissions)
+		// r.Post("/{tree_code}/units/{unit_code}/permissions", controller.PostUnitPermission)
+		// r.Delete("/{tree_code}/units/{unit_code}/permissions/{permission_id}", controller.DeleteUnitPermission)
 		// Levels
-		r.Post("/{tree_id}/levels", controller.PostTreeLevel)
-		r.Get("/{tree_id}/levels", controller.GetAllTreeLevels)
-		r.Get("/{tree_id}/levels/{tree_level_id}", controller.GetTreeLevel)
-		r.Patch("/{tree_id}/levels/{tree_level_id}", controller.UpdateTreeLevel)
-		r.Delete("/{tree_id}/levels/{tree_level_id}", controller.DeleteTreeLevel)
+		r.Post("/{tree_code}/levels", controller.PostLevel)
+		r.Get("/{tree_code}/levels", controller.GetAllLevels)
+		r.Get("/{tree_code}/levels/{level_code}", controller.GetLevel)
+		r.Patch("/{tree_code}/levels/{level_code}", controller.UpdateLevel)
+		r.Delete("/{tree_code}/levels/{level_code}", controller.DeleteLevel)
 	})
 
 	return r
