@@ -45,7 +45,7 @@ func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
 		t.Code = fmt.Sprintf("%s_%s", "custom", t.Code)
 	}
 
-	if len(t.Code) > 60 {
+	if len(t.Code) > constants.DatabaseMaxLength {
 		return customerror.New(http.StatusInternalServerError, "tree create", "invalid code lenght")
 	}
 

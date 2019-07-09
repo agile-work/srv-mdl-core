@@ -85,7 +85,7 @@ func (g *Group) Create(trs *db.Transaction, columns ...string) error {
 		g.Code = fmt.Sprintf("%s_%s", "custom", g.Code)
 	}
 
-	if len(g.Code) > 60 {
+	if len(g.Code) > constants.DatabaseMaxLength {
 		return customerror.New(http.StatusInternalServerError, "group create", "invalid code lenght")
 	}
 

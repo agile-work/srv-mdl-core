@@ -67,7 +67,7 @@ func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 		s.Code = fmt.Sprintf("%s_%s", "custom", s.Code)
 	}
 
-	if len(s.Code) > 60 {
+	if len(s.Code) > constants.DatabaseMaxLength {
 		return customerror.New(http.StatusInternalServerError, "schema create", "invalid code lenght")
 	}
 

@@ -74,7 +74,7 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 		f.Code = fmt.Sprintf("%s_%s", "custom", f.Code)
 	}
 
-	if len(f.Code) > 60 {
+	if len(f.Code) > constants.DatabaseMaxLength {
 		return customerror.New(http.StatusInternalServerError, "field create", "invalid code lenght")
 	}
 

@@ -59,7 +59,7 @@ func (ds *Dataset) Create(trs *db.Transaction, columns ...string) error {
 		ds.Code = fmt.Sprintf("%s_%s", "custom", ds.Code)
 	}
 
-	if len(ds.Code) > 60 {
+	if len(ds.Code) > constants.DatabaseMaxLength {
 		return customerror.New(http.StatusInternalServerError, "dataset create", "invalid code lenght")
 	}
 
