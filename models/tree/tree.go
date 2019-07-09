@@ -2,10 +2,12 @@ package tree
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/agile-work/srv-mdl-core/models/dataset"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
@@ -36,7 +38,21 @@ func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
 		customerror.New(http.StatusInternalServerError, "tree create", err.Error())
 	}
 	t.ID = id
-	return nil
+
+	ds := &dataset.Dataset{
+		Code:        fmt.Sprintf("ds_tree_%s", t.Code),
+		Name:        t.Name,
+		Description: t.Description,
+		Type:        constants.DatasetDynamic,
+		Definitions: []byte(fmt.Sprintf(`{"query": "SELECT unity.code, unity.label AS name, array_to_string(array_agg(unity_path.name ORDER BY unity_path.path), '->') AS path, unity.active FROM (SELECT lang.value AS label, unity.tree_code, unity.code, unity.path, unity.name, unity.active from core_tree_units AS unity, LATERAL jsonb_each_text(unity.name) AS lang) AS unity JOIN (SELECT lang.value AS name, unity_path.path, unity_path.active FROM core_tree_units AS unity_path, LATERAL jsonb_each_text(unity_path.name) AS lang) AS unity_path ON unity_path.path @> unity.path and unity_path.active = unity.active WHERE unity.tree_code = '%s' GROUP BY unity.code, unity.label, unity.path, unity.active ORDER BY path`, t.Code)),
+		CreatedBy:   t.CreatedBy,
+		CreatedAt:   t.CreatedAt,
+		UpdatedBy:   t.UpdatedBy,
+		UpdatedAt:   t.UpdatedAt,
+		Active:      true,
+	}
+
+	return ds.Create(trs)
 }
 
 // LoadAll defines all instances from the object
@@ -90,5 +106,10 @@ func (t *Tree) Delete(trs *db.Transaction) error {
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "tree delete", err.Error())
 	}
-	return nil
+
+	ds := &dataset.Dataset{
+		Code: fmt.Sprintf("ds_tree_%s", t.Code),
+	}
+
+	return ds.Delete(trs)
 }
