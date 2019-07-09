@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/job"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
+	"github.com/agile-work/srv-mdl-shared/util"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -18,6 +20,7 @@ import (
 type Schema struct {
 	ID          string                  `json:"id" sql:"id" pk:"true"`
 	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	ContentCode string                  `json:"content_code" sql:"content_code"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
 	Parent      string                  `json:"parent_id" sql:"parent_id"`
@@ -53,6 +56,21 @@ type Schemas []Schema
 // Create persists the struct creating a new object in the database
 func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 	s.Status = constants.SchemaStatusProcessing
+
+	if s.ContentCode != "" {
+		prefix, err := util.GetContentPrefix(s.ContentCode)
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "schema create", err.Error())
+		}
+		s.Code = fmt.Sprintf("%s_%s", prefix, s.Code)
+	} else {
+		s.Code = fmt.Sprintf("%s_%s", "custom", s.Code)
+	}
+
+	if len(s.Code) > 60 {
+		return customerror.New(http.StatusInternalServerError, "schema create", "invalid code lenght")
+	}
+
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreSchemas, s, columns...)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "schema create", err.Error())
@@ -93,6 +111,12 @@ func (s *Schema) Load() error {
 // Update updates object data in the database
 func (s *Schema) Update(trs *db.Transaction, columns []string, translations map[string]string) error {
 	opt := &db.Options{Conditions: builder.Equal("code", s.Code)}
+
+	if s.ContentCode != "" {
+		if err := util.ValidateContent(s.ContentCode); err != nil {
+			return customerror.New(http.StatusInternalServerError, "schema update", err.Error())
+		}
+	}
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreSchemas, s, opt, strings.Join(columns, ",")); err != nil {

@@ -155,13 +155,6 @@ func (d *DynamicDefinition) parseQuery(languageCode string) error {
 		d.Fields[i].DataType = parseSQLType(f.DataType)
 		d.Fields[i].Label.Language = make(map[string]string)
 		d.Fields[i].Label.Language[languageCode] = f.Code
-		d.Fields[i].Type = "field"
-		if f.Code == "id" {
-			d.Fields[i].Type = "id"
-		}
-		if f.Code == "label" {
-			d.Fields[i].Type = "label"
-		}
 	}
 
 	trs.Commit()

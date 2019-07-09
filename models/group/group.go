@@ -2,12 +2,14 @@ package group
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
+	"github.com/agile-work/srv-mdl-shared/util"
 
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -18,6 +20,7 @@ import (
 type Group struct {
 	ID                      string                  `json:"id" sql:"id" pk:"true"`
 	Code                    string                  `json:"code" sql:"code"`
+	ContentCode             string                  `json:"content_code" sql:"content_code"`
 	Name                    translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description             translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
 	TreeUnitID              *string                 `json:"tree_unit_id" sql:"tree_unit_id"`
@@ -72,6 +75,20 @@ type Groups []Group
 
 // Create persists the struct creating a new object in the database
 func (g *Group) Create(trs *db.Transaction, columns ...string) error {
+	if g.ContentCode != "" {
+		prefix, err := util.GetContentPrefix(g.ContentCode)
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "group create", err.Error())
+		}
+		g.Code = fmt.Sprintf("%s_%s", prefix, g.Code)
+	} else {
+		g.Code = fmt.Sprintf("%s_%s", "custom", g.Code)
+	}
+
+	if len(g.Code) > 60 {
+		return customerror.New(http.StatusInternalServerError, "group create", "invalid code lenght")
+	}
+
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreGroups, g, columns...)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "group create", err.Error())
@@ -102,6 +119,12 @@ func (g *Group) Load(trs *db.Transaction) error {
 // Update updates object data in the database
 func (g *Group) Update(trs *db.Transaction, columns []string, translations map[string]string) error {
 	opt := &db.Options{Conditions: builder.Equal("code", g.Code)}
+
+	if g.ContentCode != "" {
+		if err := util.ValidateContent(g.ContentCode); err != nil {
+			return customerror.New(http.StatusInternalServerError, "group update", err.Error())
+		}
+	}
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreGroups, g, opt, strings.Join(columns, ",")); err != nil {

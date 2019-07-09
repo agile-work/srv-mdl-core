@@ -11,6 +11,7 @@ import (
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-mdl-shared/models/user"
+	"github.com/agile-work/srv-mdl-shared/util"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -33,7 +34,8 @@ func (ds *Datasets) LoadAll(opt *db.Options) error {
 // Dataset defines the struct of this object
 type Dataset struct {
 	ID          string                  `json:"id" sql:"id" pk:"true"`
-	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"` // TODO: quando o tipo for schema vai receber o mesmo code de schema e os demais concatenar cst_ se já não tiver no code
+	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	ContentCode string                  `json:"content_code" sql:"content_code"`
 	Type        string                  `json:"type" sql:"type" updatable:"false" validate:"required"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
@@ -47,6 +49,20 @@ type Dataset struct {
 
 // Create persists the struct creating a new object in the database
 func (ds *Dataset) Create(trs *db.Transaction, columns ...string) error {
+	if ds.ContentCode != "" {
+		prefix, err := util.GetContentPrefix(ds.ContentCode)
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "dataset create", err.Error())
+		}
+		ds.Code = fmt.Sprintf("%s_%s", prefix, ds.Code)
+	} else {
+		ds.Code = fmt.Sprintf("%s_%s", "custom", ds.Code)
+	}
+
+	if len(ds.Code) > 60 {
+		return customerror.New(http.StatusInternalServerError, "dataset create", "invalid code lenght")
+	}
+
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreDatasets, ds, columns...)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "dataset create", err.Error())
@@ -82,6 +98,12 @@ func (ds *Dataset) Load() error {
 // Update updates object data in the database
 func (ds *Dataset) Update(trs *db.Transaction, columns []string, translations map[string]string) error {
 	opt := &db.Options{Conditions: builder.Equal("code", ds.Code)}
+
+	if ds.ContentCode != "" {
+		if err := util.ValidateContent(ds.ContentCode); err != nil {
+			return customerror.New(http.StatusInternalServerError, "dataset update", err.Error())
+		}
+	}
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreDatasets, ds, opt, strings.Join(columns, ",")); err != nil {

@@ -2,12 +2,14 @@ package field
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
+	"github.com/agile-work/srv-mdl-shared/util"
 
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -35,6 +37,7 @@ func (f *Fields) LoadAll(opt *db.Options) error {
 type Field struct {
 	ID           string                  `json:"id" sql:"id" pk:"true"`
 	Code         string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	ContentCode  string                  `json:"content_code" sql:"content_code"`
 	SchemaCode   string                  `json:"schema_code" sql:"schema_code" updatable:"false"`
 	Type         string                  `json:"field_type" sql:"field_type" updatable:"false" validate:"required"`
 	Name         translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
@@ -60,6 +63,21 @@ func (f *Field) Create(trs *db.Transaction, columns ...string) error {
 	}
 	translation.FieldsRequestLanguageCode = "all"
 	f.setDefinition(def)
+
+	if f.ContentCode != "" {
+		prefix, err := util.GetContentPrefix(f.ContentCode)
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "field create", err.Error())
+		}
+		f.Code = fmt.Sprintf("%s_%s", prefix, f.Code)
+	} else {
+		f.Code = fmt.Sprintf("%s_%s", "custom", f.Code)
+	}
+
+	if len(f.Code) > 60 {
+		return customerror.New(http.StatusInternalServerError, "field create", "invalid code lenght")
+	}
+
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreSchemaFields, f, columns...)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "field create", err.Error())
@@ -90,6 +108,12 @@ func (f *Field) Update(trs *db.Transaction, columns []string, translations map[s
 		builder.Equal("code", f.Code),
 		builder.Equal("schema_code", f.SchemaCode),
 	)}
+
+	if f.ContentCode != "" {
+		if err := util.ValidateContent(f.ContentCode); err != nil {
+			return customerror.New(http.StatusInternalServerError, "field update", err.Error())
+		}
+	}
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreSchemaFields, f, opt, strings.Join(columns, ",")); err != nil {

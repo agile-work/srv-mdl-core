@@ -10,6 +10,7 @@ import (
 	"github.com/agile-work/srv-mdl-core/models/dataset"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
+	"github.com/agile-work/srv-mdl-shared/util"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
@@ -19,6 +20,7 @@ import (
 type Tree struct {
 	ID          string                  `json:"id" sql:"id" pk:"true"`
 	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	ContentCode string                  `json:"content_code" sql:"content_code"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
 	Active      bool                    `json:"active" sql:"active"`
@@ -33,6 +35,20 @@ type Trees []Tree
 
 // Create persists the struct creating a new object in the database
 func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
+	if t.ContentCode != "" {
+		prefix, err := util.GetContentPrefix(t.ContentCode)
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "tree create", err.Error())
+		}
+		t.Code = fmt.Sprintf("%s_%s", prefix, t.Code)
+	} else {
+		t.Code = fmt.Sprintf("%s_%s", "custom", t.Code)
+	}
+
+	if len(t.Code) > 60 {
+		return customerror.New(http.StatusInternalServerError, "tree create", "invalid code lenght")
+	}
+
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTrees, t, columns...)
 	if err != nil {
 		customerror.New(http.StatusInternalServerError, "tree create", err.Error())
@@ -76,6 +92,12 @@ func (t *Tree) Load() error {
 // Update updates object data in the database
 func (t *Tree) Update(trs *db.Transaction, columns []string, translations map[string]string) error {
 	opt := &db.Options{Conditions: builder.Equal("code", t.Code)}
+
+	if t.ContentCode != "" {
+		if err := util.ValidateContent(t.ContentCode); err != nil {
+			return customerror.New(http.StatusInternalServerError, "tree create", err.Error())
+		}
+	}
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreTrees, t, opt, strings.Join(columns, ",")); err != nil {

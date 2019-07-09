@@ -20,7 +20,6 @@ type Param struct {
 	Code     string                  `json:"code"`
 	DataType string                  `json:"data_type"`
 	Label    translation.Translation `json:"label"`
-	Type     string                  `json:"field_type,omitempty"`
 	Pattern  string                  `json:"pattern,omitempty"`
 	Security Security                `json:"security,omitempty"`
 }
@@ -68,18 +67,6 @@ func (p *Param) Update(trs *db.Transaction, datasetCode string, body map[string]
 	} else if sharedUtil.Contains(cols, "label") && languageCode == "all" {
 		jsonBytes, _ := json.Marshal(p.Label)
 		sqlQuery := getQueryUpdateField("label", string(jsonBytes), p.Code, datasetCode, typeList)
-		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
-		}
-	}
-
-	// TODO: Verificar se era p/ alterar o tipo do field
-	if sharedUtil.Contains(cols, "field_type") && typeList == "fields" {
-		jsonBytes, err := json.Marshal(p.Type)
-		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "field_type parse", err.Error())
-		}
-		sqlQuery := getQueryUpdateField("field_type", string(jsonBytes), p.Code, datasetCode, typeList)
 		if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
 			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
 		}

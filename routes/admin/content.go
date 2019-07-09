@@ -9,7 +9,7 @@ import (
 func ContentRoutes() *chi.Mux {
 	r := chi.NewRouter()
 
-	// v1/api/admin/contents
+	// api/v1/core/admin/contents
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", controller.PostContent)
 		r.Get("/", controller.GetAllContents)
