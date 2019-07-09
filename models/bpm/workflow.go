@@ -23,6 +23,7 @@ type Workflow struct {
 	SchemaCode  string                  `json:"schema_code" sql:"schema_code"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
+	Params      map[string]interface{}  `json:"params" sql:"params" field:"jsonb"`
 	Active      bool                    `json:"active" sql:"active"`
 	CreatedBy   string                  `json:"created_by" sql:"created_by"`
 	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
@@ -31,7 +32,7 @@ type Workflow struct {
 }
 
 // Create persists the struct creating a new object in the database
-func (w *Workflow) Create(trs *db.Transaction, columns ...string) error {
+func (w *Workflow) Create(trs *db.Transaction) error {
 	if w.ContentCode != "" {
 		prefix, err := util.GetContentPrefix(w.ContentCode)
 		if err != nil {
@@ -46,7 +47,7 @@ func (w *Workflow) Create(trs *db.Transaction, columns ...string) error {
 		return customerror.New(http.StatusInternalServerError, "workflow create", "invalid code lenght")
 	}
 
-	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreBPM, w, columns...)
+	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreBPM, w)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "workflow create", err.Error())
 	}

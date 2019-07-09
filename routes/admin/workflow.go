@@ -5,14 +5,14 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// ContentRoutes creates the api methods
+// WorkflowRoutes creates the api methods
 func WorkflowRoutes() *chi.Mux {
 	r := chi.NewRouter()
 
 	// api/v1/core/admin/workflow
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", controller.PostWorkflow)
-		r.Get("/", controller.GetAllWorkflowss)
+		r.Get("/", controller.GetAllWorkflows)
 		r.Get("/{workflow_code}", controller.GetWorkflow)
 		r.Patch("/{workflow_code}", controller.UpdateWorkflow)
 		r.Delete("/{workflow_code}", controller.DeleteWorkflow)
@@ -37,3 +37,4 @@ func WorkflowRoutes() *chi.Mux {
 	})
 
 	return r
+}
