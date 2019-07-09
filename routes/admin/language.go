@@ -5,11 +5,11 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// ConfigRoutes creates the api methods
-func ConfigRoutes() *chi.Mux {
+// LanguageRoutes creates the api methods
+func LanguageRoutes() *chi.Mux {
 	r := chi.NewRouter()
 
-	// v1/api/admin/configs
+	// v1/api/admin/Languages
 	r.Route("/languages", func(r chi.Router) {
 		r.Post("/", controller.PostLanguage)
 		r.Get("/", controller.GetAllLanguages)

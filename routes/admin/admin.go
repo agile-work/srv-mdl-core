@@ -10,7 +10,7 @@ func Routes() *chi.Mux {
 
 	// v1/api/admin/configs
 	r.Route("/", func(r chi.Router) {
-		r.Mount("/configs", ConfigRoutes())
+		r.Mount("/configs", LanguageRoutes())
 		r.Mount("/users", UserRoutes())
 		r.Mount("/trees", TreeRoutes())
 		r.Mount("/schemas", SchemaRoutes())

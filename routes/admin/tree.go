@@ -22,10 +22,6 @@ func TreeRoutes() *chi.Mux {
 		r.Get("/{tree_code}/units/{unit_code}", controller.GetUnit)
 		r.Patch("/{tree_code}/units/{unit_code}", controller.UpdateUnit)
 		r.Delete("/{tree_code}/units/{unit_code}", controller.DeleteUnit)
-		// Permissions
-		// r.Get("/{tree_code}/units/{unit_code}/permissions", controller.GetAllUnitPermissions)
-		// r.Post("/{tree_code}/units/{unit_code}/permissions", controller.PostUnitPermission)
-		// r.Delete("/{tree_code}/units/{unit_code}/permissions/{permission_id}", controller.DeleteUnitPermission)
 		// Levels
 		r.Post("/{tree_code}/levels", controller.PostLevel)
 		r.Get("/{tree_code}/levels", controller.GetAllLevels)
