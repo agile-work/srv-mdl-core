@@ -8,8 +8,8 @@ import (
 
 // StepDefinition define the specific data for a step
 type StepDefinition struct {
-	Actions        []Action
-	PostConditions []Condition
+	Actions        []Action    `json:"actions" validate:"required"`
+	PostConditions []Condition `json:"post_conditions" validate:"required"`
 }
 
 // Condition define a condition to validate the next step
@@ -20,11 +20,11 @@ type Condition struct {
 
 // Action define the action to be executed in the step
 type Action struct {
-	Code        string                  `json:"code" validate:"required"`
+	Code        string                  `json:"code" updatable:"false" validate:"required"`
+	Type        string                  `json:"action_type" updatable:"false" validate:"required"` // update_schema, set_param, notify, approval, execute_job
+	Definitions json.RawMessage         `json:"action_definition" updatable:"false" validate:"required"`
 	Name        translation.Translation `json:"name" validate:"required"`
 	Description translation.Translation `json:"description"`
-	Type        string                  `json:"action_type" validate:"required"` // update_schema, set_param, notify, approval, execute_job
-	Definitions json.RawMessage         `json:"action_definition" validate:"required"`
 }
 
 // UpdateSchemaAction specify the action type
