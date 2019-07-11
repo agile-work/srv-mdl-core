@@ -1,6 +1,7 @@
 package dataset
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/agile-work/srv-mdl-shared/util"
@@ -87,7 +88,6 @@ func DeleteDatasetOption(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	translation.FieldsRequestLanguageCode = "all"
 	staticDefinition := &dataset.StaticDefinition{}
 	if err := staticDefinition.DeleteOption(trs, chi.URLParam(req, "option_code"), chi.URLParam(req, "dataset_code")); err != nil {
 		trs.Rollback()
@@ -104,5 +104,36 @@ func DeleteDatasetOption(res http.ResponseWriter, req *http.Request) {
 func UpdateDatasetOrder(res http.ResponseWriter, req *http.Request) {
 	resp := response.New()
 
+	body, err := util.GetBody(req)
+	if err != nil {
+		resp.NewError("UpdateDatasetOrder get body", err)
+		resp.Render(res, req)
+		return
+	}
+	order := []string{}
+	err = json.Unmarshal(body, &order)
+	if err != nil {
+		resp.NewError("UpdateDatasetOrder unmarshal", err)
+		resp.Render(res, req)
+		return
+	}
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdateDatasetOrder new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	staticDefinition := &dataset.StaticDefinition{}
+	if err := staticDefinition.UpdateOptionsOrder(trs, chi.URLParam(req, "dataset_code"), order); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdateDatasetOrder", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+
+	resp.Data = order
 	resp.Render(res, req)
 }

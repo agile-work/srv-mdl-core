@@ -22,6 +22,17 @@ type StaticDefinition struct {
 	Order     []string          `json:"order,omitempty"`
 }
 
+// Option defines the struct of a static option
+type Option struct {
+	Code      string                  `json:"code" updatable:"false" validate:"required"`
+	Label     translation.Translation `json:"label" validate:"required"`
+	Active    bool                    `json:"active"`
+	CreatedBy string                  `json:"created_by"`
+	CreatedAt time.Time               `json:"created_at"`
+	UpdatedBy string                  `json:"updated_by"`
+	UpdatedAt time.Time               `json:"updated_at"`
+}
+
 // AddOption insert a new option to the static dataset
 func (def *StaticDefinition) AddOption(trs *db.Transaction, option *Option, datasetCode string) error {
 	ds := Dataset{Code: datasetCode}
@@ -64,6 +75,39 @@ func (def *StaticDefinition) UpdateOption(trs *db.Transaction, optionCode, datas
 		if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreDatasets, "definitions", path, value, builder.Equal("code", datasetCode)); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// UpdateOptionsOrder update options order
+func (def *StaticDefinition) UpdateOptionsOrder(trs *db.Transaction, datasetCode string, order []string) error {
+	ds := Dataset{Code: datasetCode}
+	if err := ds.Load(); err != nil {
+		return customerror.New(http.StatusBadRequest, "load dataset", err.Error())
+	}
+
+	if ds.Type != constants.DatasetStatic {
+		return customerror.New(http.StatusBadRequest, "load dataset", "invalid dataset type")
+	}
+
+	genericDef, err := ds.getDefinition()
+	if err != nil {
+		return customerror.New(http.StatusBadRequest, "get definition", err.Error())
+	}
+	def = genericDef.(*StaticDefinition)
+
+	if len(def.Options) != len(order) {
+		return customerror.New(http.StatusBadRequest, "update order", "invalid request order")
+	}
+
+	for key := range def.Options {
+		if !util.Contains(order, key) {
+			return customerror.New(http.StatusBadRequest, "update order", fmt.Sprintf("code %s not found", key))
+		}
+	}
+
+	if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreDatasets, "definitions", "{order}", order, builder.Equal("code", datasetCode)); err != nil {
+		return customerror.New(http.StatusBadRequest, "update order", err.Error())
 	}
 	return nil
 }
@@ -114,15 +158,4 @@ func (def *StaticDefinition) getInstances() []map[string]interface{} {
 		result = append(result, item)
 	}
 	return result
-}
-
-// Option defines the struct of a static option
-type Option struct {
-	Code      string                  `json:"code" updatable:"false" validate:"required"`
-	Label     translation.Translation `json:"label" validate:"required"`
-	Active    bool                    `json:"active"`
-	CreatedBy string                  `json:"created_by"`
-	CreatedAt time.Time               `json:"created_at"`
-	UpdatedBy string                  `json:"updated_by"`
-	UpdatedAt time.Time               `json:"updated_at"`
 }
