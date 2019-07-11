@@ -69,8 +69,12 @@ func (o *Option) Add(trs *db.Transaction, datasetCode string) error {
 		return customerror.New(http.StatusNotFound, "validate dataset", "code already exists")
 	}
 
-	optionBytes, _ := json.Marshal(o)
-	rows, err := trs.Query(builder.Update(
+	optionBytes, err := json.Marshal(o)
+	if err != nil {
+		return customerror.New(http.StatusBadRequest, "add", err.Error())
+	}
+
+	statementOption := builder.Update(
 		constants.TableCoreDatasets,
 	).InsertJSON(
 		"definitions",
@@ -79,13 +83,9 @@ func (o *Option) Add(trs *db.Transaction, datasetCode string) error {
 		true,
 	).Where(
 		builder.Equal("code", datasetCode),
-	))
-	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "Add", err.Error())
-	}
-	rows.Close()
+	)
 
-	rows, err = trs.Query(builder.Update(
+	statementOrder := builder.Update(
 		constants.TableCoreDatasets,
 	).UpdateJSON(
 		"definitions",
@@ -94,11 +94,11 @@ func (o *Option) Add(trs *db.Transaction, datasetCode string) error {
 		true,
 	).Where(
 		builder.Equal("code", datasetCode),
-	))
-	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "Add", err.Error())
+	)
+
+	if err := trs.Exec(statementOption, statementOrder); err != nil {
+		return customerror.New(http.StatusInternalServerError, "add", err.Error())
 	}
-	rows.Close()
 
 	return nil
 }
@@ -115,7 +115,7 @@ func (o *Option) Update(trs *db.Transaction, datasetCode string, body map[string
 	cols := util.GetBodyColumns(body)
 	languageCode := translation.FieldsRequestLanguageCode
 	if sharedUtil.Contains(cols, "label") && languageCode != "all" {
-		_, err := trs.Query(builder.Update(
+		if err := trs.Exec(builder.Update(
 			constants.TableCoreDatasets,
 		).UpdateJSON(
 			"definitions",
@@ -124,16 +124,15 @@ func (o *Option) Update(trs *db.Transaction, datasetCode string, body map[string
 			true,
 		).Where(
 			builder.Equal("code", datasetCode),
-		))
-		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "update", err.Error())
 		}
 	} else if sharedUtil.Contains(cols, "label") && languageCode == "all" {
 		jsonBytes, err := json.Marshal(o.Label)
 		if err != nil {
 			return customerror.New(http.StatusBadRequest, "validate dataset options", err.Error())
 		}
-		_, err = trs.Query(builder.Update(
+		if err := trs.Exec(builder.Update(
 			constants.TableCoreDatasets,
 		).UpdateJSON(
 			"definitions",
@@ -142,15 +141,14 @@ func (o *Option) Update(trs *db.Transaction, datasetCode string, body map[string
 			true,
 		).Where(
 			builder.Equal("code", datasetCode),
-		))
-		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "update", err.Error())
 		}
 	}
 
 	// get fields from payload
 	if sharedUtil.Contains(cols, "active") {
-		_, err := trs.Query(builder.Update(
+		if err := trs.Exec(builder.Update(
 			constants.TableCoreDatasets,
 		).UpdateJSON(
 			"definitions",
@@ -159,9 +157,8 @@ func (o *Option) Update(trs *db.Transaction, datasetCode string, body map[string
 			true,
 		).Where(
 			builder.Equal("code", datasetCode),
-		))
-		if err != nil {
-			return customerror.New(http.StatusInternalServerError, "Update", err.Error())
+		)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "update", err.Error())
 		}
 	}
 	return nil
@@ -187,7 +184,7 @@ func (o *Option) Delete(trs *db.Transaction, datasetCode string) error {
 		return customerror.New(http.StatusNotFound, "validate dataset", "options not found")
 	}
 
-	rows, err := trs.Query(builder.Update(
+	statementOption := builder.Update(
 		constants.TableCoreDatasets,
 	).UpdateJSON(
 		"definitions",
@@ -196,13 +193,9 @@ func (o *Option) Delete(trs *db.Transaction, datasetCode string) error {
 		true,
 	).Where(
 		builder.Equal("code", datasetCode),
-	))
-	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "Add", err.Error())
-	}
-	rows.Close()
+	)
 
-	rows, err = trs.Query(builder.Update(
+	statementOrder := builder.Update(
 		constants.TableCoreDatasets,
 	).UpdateJSON(
 		"definitions",
@@ -211,14 +204,10 @@ func (o *Option) Delete(trs *db.Transaction, datasetCode string) error {
 		true,
 	).Where(
 		builder.Equal("code", datasetCode),
-	))
-	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "Add", err.Error())
-	}
-	rows.Close()
+	)
 
-	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "Delete", err.Error())
+	if err := trs.Exec(statementOption, statementOrder); err != nil {
+		return customerror.New(http.StatusInternalServerError, "delete", err.Error())
 	}
 
 	return nil
