@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// GetDatasetInstance return all schema instances from the service
+// GetDatasetInstance return all dataset instances
 func GetDatasetInstance(res http.ResponseWriter, req *http.Request) {
 	resp := response.New()
 

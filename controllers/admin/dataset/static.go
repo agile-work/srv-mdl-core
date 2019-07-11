@@ -3,10 +3,11 @@ package dataset
 import (
 	"net/http"
 
+	"github.com/agile-work/srv-mdl-shared/util"
+
 	"github.com/agile-work/srv-mdl-core/models/dataset"
 	"github.com/agile-work/srv-mdl-shared/models/response"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
-	"github.com/agile-work/srv-mdl-shared/util"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 	"github.com/go-chi/chi"
 )
@@ -30,7 +31,9 @@ func AddDatasetOption(res http.ResponseWriter, req *http.Request) {
 	}
 
 	translation.FieldsRequestLanguageCode = "all"
-	if err := opt.Add(trs, chi.URLParam(req, "dataset_code")); err != nil {
+
+	staticDefinition := &dataset.StaticDefinition{}
+	if err := staticDefinition.AddOption(trs, opt, chi.URLParam(req, "dataset_code")); err != nil {
 		trs.Rollback()
 		resp.NewError("AddDatasetOption", err)
 		resp.Render(res, req)
@@ -44,23 +47,7 @@ func AddDatasetOption(res http.ResponseWriter, req *http.Request) {
 
 // UpdateDatasetOption change dataset option data
 func UpdateDatasetOption(res http.ResponseWriter, req *http.Request) {
-	opt := &dataset.Option{
-		Code: chi.URLParam(req, "option_code"),
-	}
 	resp := response.New()
-
-	if err := resp.Parse(req, opt); err != nil {
-		resp.NewError("UpdateDatasetOption response parse", err)
-		resp.Render(res, req)
-		return
-	}
-
-	body, err := util.GetBodyMap(req)
-	if err != nil {
-		resp.NewError("UpdateDatasetOption get body", err)
-		resp.Render(res, req)
-		return
-	}
 
 	trs, err := db.NewTransaction()
 	if err != nil {
@@ -69,8 +56,17 @@ func UpdateDatasetOption(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	columns, err := util.GetBodyUpdatableJSONColumns(req, &dataset.Option{}, req.Header.Get("username"), req.Header.Get("Content-Language"))
+	if err != nil {
+		resp.NewError("AddDatasetOption request parse", err)
+		resp.Render(res, req)
+		return
+	}
+
 	translation.FieldsRequestLanguageCode = "all"
-	if err := opt.Update(trs, chi.URLParam(req, "dataset_code"), body); err != nil {
+	staticDefinition := &dataset.StaticDefinition{}
+
+	if err := staticDefinition.UpdateOption(trs, chi.URLParam(req, "option_code"), chi.URLParam(req, "dataset_code"), columns); err != nil {
 		trs.Rollback()
 		resp.NewError("UpdateDatasetOption", err)
 		resp.Render(res, req)
@@ -78,23 +74,12 @@ func UpdateDatasetOption(res http.ResponseWriter, req *http.Request) {
 	}
 	trs.Commit()
 
-	resp.Data = opt
 	resp.Render(res, req)
 }
 
 // DeleteDatasetOption delete an option
 func DeleteDatasetOption(res http.ResponseWriter, req *http.Request) {
-	opt := &dataset.Option{
-		Code: chi.URLParam(req, "option_code"),
-	}
 	resp := response.New()
-
-	if err := resp.Parse(req, opt); err != nil {
-		resp.NewError("DeleteDatasetOption response parse", err)
-		resp.Render(res, req)
-		return
-	}
-
 	trs, err := db.NewTransaction()
 	if err != nil {
 		resp.NewError("DeleteDatasetOption new transaction", err)
@@ -103,7 +88,8 @@ func DeleteDatasetOption(res http.ResponseWriter, req *http.Request) {
 	}
 
 	translation.FieldsRequestLanguageCode = "all"
-	if err := opt.Delete(trs, chi.URLParam(req, "dataset_code")); err != nil {
+	staticDefinition := &dataset.StaticDefinition{}
+	if err := staticDefinition.DeleteOption(trs, chi.URLParam(req, "option_code"), chi.URLParam(req, "dataset_code")); err != nil {
 		trs.Rollback()
 		resp.NewError("DeleteDatasetOption", err)
 		resp.Render(res, req)
@@ -111,7 +97,6 @@ func DeleteDatasetOption(res http.ResponseWriter, req *http.Request) {
 	}
 	trs.Commit()
 
-	resp.Data = opt
 	resp.Render(res, req)
 }
 
