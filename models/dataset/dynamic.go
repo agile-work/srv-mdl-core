@@ -19,16 +19,52 @@ import (
 // DynamicDefinition define specific fields for the dataset definition
 type DynamicDefinition struct {
 	Query     string    `json:"query"`
-	Fields    []Param   `json:"fields"`
-	Params    []Param   `json:"params,omitempty"`
+	Fields    []Param   `json:"fields" updatable:"false"`
+	Params    []Param   `json:"params,omitempty" updatable:"false"`
 	CreatedBy string    `json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedBy string    `json:"updated_by"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// UpdateParam insert a new option to the static dataset
+func (d *DynamicDefinition) UpdateParam(trs *db.Transaction, paramType, paramCode, datasetCode string, columns map[string]interface{}) error {
+	ds := Dataset{Code: datasetCode}
+	if err := ds.Load(); err != nil {
+		return customerror.New(http.StatusBadRequest, "load dataset", err.Error())
+	}
+
+	if ds.Type != constants.DatasetDynamic {
+		return customerror.New(http.StatusBadRequest, "load dataset", "invalid dataset type")
+	}
+
+	genericDef, err := ds.getDefinition()
+	if err != nil {
+		return customerror.New(http.StatusBadRequest, "get definition", err.Error())
+	}
+	d = genericDef.(*DynamicDefinition)
+	params := d.Params
+	if paramType == "fields" {
+		params = d.Fields
+	}
+
+	hasParam, index := d.ContainsParamCode(paramCode, params)
+	if !hasParam {
+		return customerror.New(http.StatusBadRequest, "update field", "code not found")
+	}
+
+	for col, value := range columns {
+		path := fmt.Sprintf("{%s, %d, %s}", paramType, index, col)
+		if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreDatasets, "definitions", path, value, builder.Equal("code", datasetCode)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // UpdateQuery updates a query dataset
-func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode string) error {
+func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode, username string) error {
 	ds := &Dataset{Code: datasetCode}
 	if err := ds.Load(); err != nil {
 		return customerror.New(http.StatusInternalServerError, "validate dataset", err.Error())
@@ -47,7 +83,7 @@ func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode string)
 		return customerror.New(http.StatusBadRequest, "validate dataset", "invalid query")
 	}
 
-	if err := d.parseQuery(translation.FieldsRequestLanguageCode); err != nil {
+	if err := d.parseQuery(translation.FieldsRequestLanguageCode, username, true); err != nil {
 		return customerror.New(http.StatusBadRequest, "dataset parse query", err.Error())
 	}
 
@@ -78,19 +114,23 @@ func (d *DynamicDefinition) UpdateQuery(trs *db.Transaction, datasetCode string)
 		return customerror.New(http.StatusInternalServerError, "definition parse", err.Error())
 	}
 
-	sqlQuery := fmt.Sprintf(`update %s set
+	if _, err := trs.Query(builder.Raw(fmt.Sprintf(`update %s set
 		definitions = $$%s$$,
 		updated_by = '%s',
 		updated_at = current_date
-		where code = '%s'`, constants.TableCoreDatasets, string(jsonBytes), d.UpdatedBy, datasetCode)
-	if _, err := trs.Query(builder.Raw(sqlQuery)); err != nil {
+		where code = '%s'`,
+		constants.TableCoreDatasets,
+		string(jsonBytes),
+		d.UpdatedBy,
+		datasetCode,
+	))); err != nil {
 		return customerror.New(http.StatusInternalServerError, "UpdateQuery", err.Error())
 	}
 	return nil
 }
 
 // parseQuery validate query and get fields and params from query
-func (d *DynamicDefinition) parseQuery(languageCode string) error {
+func (d *DynamicDefinition) parseQuery(languageCode, username string, isUpdate bool) error {
 	r := regexp.MustCompile("{{param:[^}}]*}}")
 	params := r.FindAllString(d.Query, -1)
 	params = util.Unique(params)
@@ -123,6 +163,13 @@ func (d *DynamicDefinition) parseQuery(languageCode string) error {
 		if len(fields) > 3 {
 			param.Pattern = fields[3]
 		}
+		date := time.Now()
+		if !isUpdate {
+			param.CreatedBy = username
+			param.CreatedAt = date
+		}
+		param.UpdatedBy = username
+		param.UpdatedAt = date
 		d.Params = append(d.Params, param)
 		parsedQuery = strings.Replace(parsedQuery, p, "null", -1)
 	}
@@ -179,6 +226,16 @@ func (d *DynamicDefinition) ContainsField(field Param) bool {
 		}
 	}
 	return false
+}
+
+// ContainsParamCode validate if dynamic definition params slice contain a specific code and return index
+func (d *DynamicDefinition) ContainsParamCode(code string, params []Param) (bool, int) {
+	for i, p := range params {
+		if p.Code == code {
+			return true, i
+		}
+	}
+	return false, -1
 }
 
 // ContainsParam validate if dynamic definition params contain a specific param and if the pattern has changed
@@ -262,6 +319,34 @@ func (d *DynamicDefinition) getSecurityFields() map[string]map[string]string {
 		}
 	}
 	return result
+}
+
+// Param defines the struct of a dynamic filter param
+type Param struct {
+	Code      string                  `json:"code" updatable:"false" validate:"required"`
+	Pattern   string                  `json:"pattern,omitempty" updatable:"false"`
+	DataType  string                  `json:"data_type" updatable:"false"`
+	Label     translation.Translation `json:"label"`
+	Security  *Security               `json:"security,omitempty"`
+	CreatedBy string                  `json:"created_by"`
+	CreatedAt time.Time               `json:"created_at"`
+	UpdatedBy string                  `json:"updated_by"`
+	UpdatedAt time.Time               `json:"updated_at"`
+}
+
+// Security defines the fields to set security to a field
+type Security struct {
+	SchemaCode string `json:"schema_code,omitempty" validate:"required"`
+	FieldCode  string `json:"field_code,omitempty" validate:"required"`
+}
+
+func paramCodeExists(params []Param, code string) bool {
+	for _, p := range params {
+		if p.Code == code {
+			return true
+		}
+	}
+	return false
 }
 
 func parseSQLType(sqlType string) string {

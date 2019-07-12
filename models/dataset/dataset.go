@@ -60,7 +60,7 @@ func (ds *Dataset) Create(trs *db.Transaction, columns ...string) error {
 	}
 
 	if len(ds.Code) > constants.DatabaseMaxLength {
-		return customerror.New(http.StatusInternalServerError, "dataset create", "invalid code lenght")
+		return customerror.New(http.StatusInternalServerError, "dataset create", "invalid code length")
 	}
 
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreDatasets, ds, columns...)
@@ -243,7 +243,7 @@ func (ds *Dataset) ProcessDefinitions(languageCode, method string) error {
 		}
 		dsDynDef.UpdatedBy = ds.UpdatedBy
 		dsDynDef.UpdatedAt = ds.UpdatedAt
-		if err := dsDynDef.parseQuery(languageCode); err != nil {
+		if err := dsDynDef.parseQuery(languageCode, ds.CreatedBy, false); err != nil {
 			return customerror.New(http.StatusBadRequest, "dataset parse query", err.Error())
 		}
 	case constants.DatasetStatic:

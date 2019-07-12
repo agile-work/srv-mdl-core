@@ -21,8 +21,7 @@ func DatasetRoutes() *chi.Mux {
 		r.Delete("/{dataset_code}/options/{option_code}", controller.DeleteDatasetOption)
 		r.Post("/{dataset_code}/order", controller.UpdateDatasetOrder)
 		r.Patch("/{dataset_code}/query", controller.UpdateDatasetQuery)
-		r.Patch("/{dataset_code}/fields/{param_code}", controller.UpdateDatasetDynamicField)
-		r.Patch("/{dataset_code}/params/{param_code}", controller.UpdateDatasetDynamicParam)
+		r.Patch("/{dataset_code}/{param_type}/{param_code}", controller.UpdateDatasetDynamicParam)
 	})
 
 	return r

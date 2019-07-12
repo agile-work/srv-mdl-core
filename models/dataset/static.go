@@ -129,7 +129,7 @@ func (def *StaticDefinition) DeleteOption(trs *db.Transaction, optionCode, datas
 	}
 	def = genericDef.(*StaticDefinition)
 	if !util.Contains(def.Order, optionCode) {
-		return customerror.New(http.StatusBadRequest, "add option", "code not found")
+		return customerror.New(http.StatusBadRequest, "delete option", "code not found")
 	}
 
 	delete(def.Options, optionCode)
@@ -141,7 +141,7 @@ func (def *StaticDefinition) DeleteOption(trs *db.Transaction, optionCode, datas
 	}
 
 	if err := trs.Exec(builder.Update(constants.TableCoreDatasets, "definitions").Values(defJSON).Where(builder.Equal("code", datasetCode))); err != nil {
-		return customerror.New(http.StatusBadRequest, "add option", err.Error())
+		return customerror.New(http.StatusBadRequest, "delete option", err.Error())
 	}
 
 	return nil

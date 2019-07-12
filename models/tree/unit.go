@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
+	"github.com/agile-work/srv-mdl-shared/models/security"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -27,7 +28,7 @@ type Unit struct {
 	CreatedAt       time.Time               `json:"created_at" sql:"created_at"`
 	UpdatedBy       string                  `json:"updated_by" sql:"updated_by"`
 	UpdatedAt       time.Time               `json:"updated_at" sql:"updated_at"`
-	// Permissions     []Permission `json:"permissions" sql:"permissions" field:"jsonb"`
+	Permissions     []security.Permission   `json:"permissions" sql:"permissions" field:"jsonb"`
 }
 
 // Units defines the array struct of this object
