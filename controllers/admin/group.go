@@ -51,13 +51,6 @@ func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetAllGroups group new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	metadata := response.Metadata{}
 	if err := metadata.Load(req); err != nil {
 		resp.NewError("GetLookupInstance metadata parse", err)
@@ -66,13 +59,11 @@ func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 	}
 	opt := metadata.GenerateDBOptions()
 	groups := &group.Groups{}
-	if err := groups.LoadAll(trs, opt); err != nil {
-		trs.Rollback()
+	if err := groups.LoadAll(opt); err != nil {
 		resp.NewError("GetAllGroups", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
 	resp.Data = groups
 	resp.Metadata = metadata
 	resp.Render(res, req)
@@ -83,21 +74,12 @@ func GetGroup(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetGroup group new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	group := &group.Group{Code: chi.URLParam(req, "group_code")}
-	if err := group.Load(trs); err != nil {
-		trs.Rollback()
+	if err := group.Load(); err != nil {
 		resp.NewError("GetGroup", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
 	resp.Data = group
 	resp.Render(res, req)
 }

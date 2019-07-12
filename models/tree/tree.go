@@ -30,9 +30,6 @@ type Tree struct {
 	UpdatedAt   time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
-// Trees defines the array struct of this object
-type Trees []Tree
-
 // Create persists the struct creating a new object in the database
 func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
 	if t.ContentCode != "" {
@@ -69,14 +66,6 @@ func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
 	}
 
 	return ds.Create(trs)
-}
-
-// LoadAll defines all instances from the object
-func (t *Trees) LoadAll(opt *db.Options) error {
-	if err := db.SelectStruct(constants.TableCoreTrees, t, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "trees load", err.Error())
-	}
-	return nil
 }
 
 // Load defines only one object from the database
@@ -134,4 +123,15 @@ func (t *Tree) Delete(trs *db.Transaction) error {
 	}
 
 	return ds.Delete(trs)
+}
+
+// Trees defines the array struct of this object
+type Trees []Tree
+
+// LoadAll defines all instances from the object
+func (t *Trees) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreTrees, t, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "trees load", err.Error())
+	}
+	return nil
 }

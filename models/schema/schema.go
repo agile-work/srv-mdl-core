@@ -34,25 +34,6 @@ type Schema struct {
 	UpdatedAt   time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
-// ViewSchModules defines the struct of this object
-type ViewSchModules struct {
-	ID           string    `json:"id" sql:"id" pk:"true"`
-	SchemaID     string    `json:"schema_id" sql:"schema_id"`
-	Code         string    `json:"code" sql:"code"`
-	Name         string    `json:"name" sql:"name"`
-	Description  string    `json:"description" sql:"description"`
-	LanguageCode string    `json:"language_code" sql:"language_code"`
-	Module       bool      `json:"module" sql:"module"`
-	Active       bool      `json:"active" sql:"active"`
-	CreatedBy    string    `json:"created_by" sql:"created_by"`
-	CreatedAt    time.Time `json:"created_at" sql:"created_at"`
-	UpdatedBy    string    `json:"updated_by" sql:"updated_by"`
-	UpdatedAt    time.Time `json:"updated_at" sql:"updated_at"`
-}
-
-// Schemas defines the array struct of this object
-type Schemas []Schema
-
 // Create persists the struct creating a new object in the database
 func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 	s.Status = constants.SchemaStatusProcessing
@@ -87,14 +68,6 @@ func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 		return customerror.New(http.StatusInternalServerError, "schema create job execution", err.Error())
 	}
 
-	return nil
-}
-
-// LoadAll defines all instances from the object
-func (s *Schemas) LoadAll(trs *db.Transaction, opt *db.Options) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreSchemas, s, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "schemas load", err.Error())
-	}
 	return nil
 }
 
@@ -172,84 +145,13 @@ func (s *Schema) CallDelete(trs *db.Transaction) error {
 	return nil
 }
 
-// // InsertModuleInSchema persists the request creating a new object in the database
-// func InsertModuleInSchema(r *http.Request) *mdlShared.Response {
-// 	response := &mdlShared.Response{
-// 		Code: http.StatusOK,
-// 	}
+// Schemas defines the array struct of this object
+type Schemas []Schema
 
-// 	schemaID := chi.URLParam(r, "schema_id")
-// 	moduleID := chi.URLParam(r, "module_id")
-
-// 	userID := r.Header.Get("userID")
-// 	now := time.Now()
-
-// 	statemant := builder.Insert(
-// 		constants.TableCoreSchemasModels,
-// 		"schema_id",
-// 		"module_id",
-// 		"created_by",
-// 		"created_at",
-// 		"updated_by",
-// 		"updated_at",
-// 	).Values(
-// 		schemaID,
-// 		moduleID,
-// 		userID,
-// 		now,
-// 		userID,
-// 		now,
-// 	)
-
-// 	err := sql.Exec(statemant)
-// 	if err != nil {
-// 		response.Code = http.StatusInternalServerError
-// 		response.Errors = append(response.Errors, mdlShared.NewResponseError(constants.ErrorInsertingRecord, "InsertModuleSchema", err.Error()))
-
-// 		return response
-// 	}
-
-// 	return response
-// }
-
-// // LoadAllModulesBySchema return all instances from the object
-// func LoadAllModulesBySchema(r *http.Request) *mdlShared.Response {
-// 	modules := []models.Schema{}
-// 	schemaID := chi.URLParam(r, "schema_id")
-// 	schemaIDColumn := fmt.Sprintf("%s.schema_id", constants.ViewCoreSchemaModules)
-// 	languageCode := r.Header.Get("Content-Language")
-// 	languageCodeColumn := fmt.Sprintf("%s.language_code", constants.ViewCoreSchemaModules)
-// 	condition := builder.And(
-// 		builder.Equal(schemaIDColumn, schemaID),
-// 		builder.Equal(languageCodeColumn, languageCode),
-// 	)
-
-// 	return db.Load(r, &modules, "LoadAllModulesBySchema", constants.ViewCoreSchemaModules, condition)
-// }
-
-// // RemoveModuleFromSchema deletes object from the database
-// func RemoveModuleFromSchema(r *http.Request) *mdlShared.Response {
-// 	response := &mdlShared.Response{
-// 		Code: http.StatusOK,
-// 	}
-
-// 	schemaID := chi.URLParam(r, "schema_id")
-// 	moduleID := chi.URLParam(r, "module_id")
-
-// 	statemant := builder.Delete(constants.TableCoreSchemasModels).Where(
-// 		builder.And(
-// 			builder.Equal("schema_id", schemaID),
-// 			builder.Equal("module_id", moduleID),
-// 		),
-// 	)
-
-// 	err := sql.Exec(statemant)
-// 	if err != nil {
-// 		response.Code = http.StatusInternalServerError
-// 		response.Errors = append(response.Errors, mdlShared.NewResponseError(constants.ErrorDeletingData, "RemoveModuleFromSchema", err.Error()))
-
-// 		return response
-// 	}
-
-// 	return response
-// }
+// LoadAll defines all instances from the object
+func (s *Schemas) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreSchemas, s, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "schemas load", err.Error())
+	}
+	return nil
+}

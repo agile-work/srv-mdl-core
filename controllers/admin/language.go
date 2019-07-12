@@ -51,13 +51,6 @@ func GetAllLanguages(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetAllLanguages language new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	metadata := response.Metadata{}
 	if err := metadata.Load(req); err != nil {
 		resp.NewError("GetLookupInstance metadata parse", err)
@@ -66,13 +59,11 @@ func GetAllLanguages(res http.ResponseWriter, req *http.Request) {
 	}
 	opt := metadata.GenerateDBOptions()
 	languages := &language.Languages{}
-	if err := languages.LoadAll(trs, opt); err != nil {
-		trs.Rollback()
+	if err := languages.LoadAll(opt); err != nil {
 		resp.NewError("GetAllLanguages", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
 	resp.Data = languages
 	resp.Metadata = metadata
 	resp.Render(res, req)
@@ -83,21 +74,12 @@ func GetLanguage(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetLanguage language new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	language := &language.Language{Code: chi.URLParam(req, "language_code")}
-	if err := language.Load(trs); err != nil {
-		trs.Rollback()
+	if err := language.Load(); err != nil {
 		resp.NewError("GetLanguage", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
 	resp.Data = language
 	resp.Render(res, req)
 }

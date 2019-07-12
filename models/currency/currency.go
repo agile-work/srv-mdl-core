@@ -34,9 +34,6 @@ type Rate struct {
 	End   *time.Time `json:"end_at,omitempty"`
 }
 
-// Currencies defines the array struct of this object
-type Currencies []Currency
-
 // Create persists the struct creating a new object in the database
 func (c *Currency) Create(trs *db.Transaction, columns ...string) error {
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreCurrencies, c, columns...)
@@ -44,15 +41,6 @@ func (c *Currency) Create(trs *db.Transaction, columns ...string) error {
 		return customerror.New(http.StatusInternalServerError, "currency create", err.Error())
 	}
 	c.ID = id
-	return nil
-}
-
-// LoadAll defines all instances from the object
-func (c *Currencies) LoadAll(opt *db.Options) error {
-	// TODO: Make a way of limit the columns for the get all. Passing fields to LoadStruct.
-	if err := db.SelectStruct(constants.TableCoreCurrencies, c, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "currencies load", err.Error())
-	}
 	return nil
 }
 
@@ -102,6 +90,18 @@ func (c *Currency) Delete(trs *db.Transaction) error {
 		),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "currency delete", err.Error())
+	}
+	return nil
+}
+
+// Currencies defines the array struct of this object
+type Currencies []Currency
+
+// LoadAll defines all instances from the object
+func (c *Currencies) LoadAll(opt *db.Options) error {
+	// TODO: Make a way of limit the columns for the get all. Passing fields to LoadStruct.
+	if err := db.SelectStruct(constants.TableCoreCurrencies, c, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "currencies load", err.Error())
 	}
 	return nil
 }

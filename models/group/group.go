@@ -33,9 +33,6 @@ type Group struct {
 	UpdatedAt   time.Time                 `json:"updated_at" sql:"updated_at"`
 }
 
-// Groups defines the array struct of this object
-type Groups []Group
-
 // Create persists the struct creating a new object in the database
 func (g *Group) Create(trs *db.Transaction, columns ...string) error {
 	if g.ContentCode != "" {
@@ -61,17 +58,9 @@ func (g *Group) Create(trs *db.Transaction, columns ...string) error {
 	return nil
 }
 
-// LoadAll defines all instances from the object
-func (g *Groups) LoadAll(trs *db.Transaction, opt *db.Options) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreGroups, g, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "groups load", err.Error())
-	}
-	return nil
-}
-
 // Load defines only one object from the database
-func (g *Group) Load(trs *db.Transaction) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreGroups, g, &db.Options{
+func (g *Group) Load() error {
+	if err := db.SelectStruct(constants.TableCoreGroups, g, &db.Options{
 		Conditions: builder.Equal("code", g.Code),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "group load", err.Error())
@@ -117,6 +106,17 @@ func (g *Group) Delete(trs *db.Transaction) error {
 		Conditions: builder.Equal("code", g.Code),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "group delete", err.Error())
+	}
+	return nil
+}
+
+// Groups defines the array struct of this object
+type Groups []Group
+
+// LoadAll defines all instances from the object
+func (g *Groups) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreGroups, g, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "groups load", err.Error())
 	}
 	return nil
 }

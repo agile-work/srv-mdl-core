@@ -51,13 +51,6 @@ func GetAllSchemas(res http.ResponseWriter, req *http.Request) {
 	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
-	trs, err := db.NewTransaction()
-	if err != nil {
-		resp.NewError("GetAllSchemas schema new transaction", err)
-		resp.Render(res, req)
-		return
-	}
-
 	metadata := response.Metadata{}
 	if err := metadata.Load(req); err != nil {
 		resp.NewError("GetLookupInstance metadata parse", err)
@@ -66,13 +59,11 @@ func GetAllSchemas(res http.ResponseWriter, req *http.Request) {
 	}
 	opt := metadata.GenerateDBOptions()
 	schemas := &schema.Schemas{}
-	if err := schemas.LoadAll(trs, opt); err != nil {
-		trs.Rollback()
+	if err := schemas.LoadAll(opt); err != nil {
 		resp.NewError("GetAllSchemas", err)
 		resp.Render(res, req)
 		return
 	}
-	trs.Commit()
 	resp.Data = schemas
 	resp.Metadata = metadata
 	resp.Render(res, req)

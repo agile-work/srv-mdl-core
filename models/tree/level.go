@@ -19,15 +19,12 @@ type Level struct {
 	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
-	TreeCode    string                  `json:"tree_code" sql:"tree_code" fk:"true"`
+	TreeCode    string                  `json:"tree_code" sql:"tree_code" fk:"true" updatable:"false" validate:"required"`
 	CreatedBy   string                  `json:"created_by" sql:"created_by"`
 	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
 	UpdatedBy   string                  `json:"updated_by" sql:"updated_by"`
 	UpdatedAt   time.Time               `json:"updated_at" sql:"updated_at"`
 }
-
-// Levels defines the array struct of this object
-type Levels []Level
 
 // Create persists the struct creating a new object in the database
 func (l *Level) Create(trs *db.Transaction, columns ...string) error {
@@ -36,14 +33,6 @@ func (l *Level) Create(trs *db.Transaction, columns ...string) error {
 		customerror.New(http.StatusInternalServerError, "level create", err.Error())
 	}
 	l.ID = id
-	return nil
-}
-
-// LoadAll defines all instances from the object
-func (l *Levels) LoadAll(opt *db.Options) error {
-	if err := db.SelectStruct(constants.TableCoreTreeLevels, l, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "levels load", err.Error())
-	}
 	return nil
 }
 
@@ -98,6 +87,17 @@ func (l *Level) Delete(trs *db.Transaction) error {
 		),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "level delete", err.Error())
+	}
+	return nil
+}
+
+// Levels defines the array struct of this object
+type Levels []Level
+
+// LoadAll defines all instances from the object
+func (l *Levels) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreTreeLevels, l, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "levels load", err.Error())
 	}
 	return nil
 }

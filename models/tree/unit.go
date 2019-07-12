@@ -31,9 +31,6 @@ type Unit struct {
 	Permissions     []security.Permission   `json:"permissions" sql:"permissions" field:"jsonb"`
 }
 
-// Units defines the array struct of this object
-type Units []Unit
-
 // Create persists the struct creating a new object in the database
 func (u *Unit) Create(trs *db.Transaction, columns ...string) error {
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTreeUnits, u, columns...)
@@ -41,14 +38,6 @@ func (u *Unit) Create(trs *db.Transaction, columns ...string) error {
 		customerror.New(http.StatusInternalServerError, "level create", err.Error())
 	}
 	u.ID = id
-	return nil
-}
-
-// LoadAll defines all instances from the object
-func (l *Units) LoadAll(opt *db.Options) error {
-	if err := db.SelectStruct(constants.TableCoreTreeUnits, l, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "levels load", err.Error())
-	}
 	return nil
 }
 
@@ -103,6 +92,17 @@ func (u *Unit) Delete(trs *db.Transaction) error {
 		),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "level delete", err.Error())
+	}
+	return nil
+}
+
+// Units defines the array struct of this object
+type Units []Unit
+
+// LoadAll defines all instances from the object
+func (l *Units) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreTreeUnits, l, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "levels load", err.Error())
 	}
 	return nil
 }

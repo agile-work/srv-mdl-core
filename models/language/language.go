@@ -25,9 +25,6 @@ type Language struct {
 	UpdatedAt time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
-// Languages defines the array struct of this object
-type Languages []Language
-
 // Create persists the struct creating a new object in the database
 func (l *Language) Create(trs *db.Transaction, columns ...string) error {
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreConfigLanguages, l, columns...)
@@ -38,17 +35,9 @@ func (l *Language) Create(trs *db.Transaction, columns ...string) error {
 	return nil
 }
 
-// LoadAll defines all instances from the object
-func (l *Languages) LoadAll(trs *db.Transaction, opt *db.Options) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreConfigLanguages, l, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "languages load", err.Error())
-	}
-	return nil
-}
-
 // Load defines only one object from the database
-func (l *Language) Load(trs *db.Transaction) error {
-	if err := db.SelectStructTx(trs.Tx, constants.TableCoreConfigLanguages, l, &db.Options{
+func (l *Language) Load() error {
+	if err := db.SelectStruct(constants.TableCoreConfigLanguages, l, &db.Options{
 		Conditions: builder.Equal("code", l.Code),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "language load", err.Error())
@@ -91,6 +80,17 @@ func (l *Language) Delete(trs *db.Transaction) error {
 		),
 	}); err != nil {
 		return customerror.New(http.StatusInternalServerError, "language delete", err.Error())
+	}
+	return nil
+}
+
+// Languages defines the array struct of this object
+type Languages []Language
+
+// LoadAll defines all instances from the object
+func (l *Languages) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreConfigLanguages, l, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "languages load", err.Error())
 	}
 	return nil
 }
