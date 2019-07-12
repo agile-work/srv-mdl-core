@@ -43,7 +43,7 @@ func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
 	}
 
 	if len(t.Code) > constants.DatabaseMaxLength {
-		return customerror.New(http.StatusInternalServerError, "tree create", "invalid code lenght")
+		return customerror.New(http.StatusInternalServerError, "tree create", "invalid code length")
 	}
 
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTrees, t, columns...)

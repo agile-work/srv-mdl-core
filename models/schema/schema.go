@@ -61,7 +61,7 @@ func (s *Schema) Create(trs *db.Transaction, columns ...string) error {
 		"schema_code": s.Code,
 	}
 
-	jobInstance := job.JobInstance{}
+	jobInstance := job.Instance{}
 
 	id, err = jobInstance.Create(trs, s.CreatedBy, constants.JobSystemCreateSchema, params)
 	if err != nil {
@@ -136,7 +136,7 @@ func (s *Schema) CallDelete(trs *db.Transaction) error {
 		"schema_code": s.Code,
 	}
 
-	jobInstance := job.JobInstance{}
+	jobInstance := job.Instance{}
 
 	if _, err := jobInstance.Create(trs, s.UpdatedBy, constants.JobSystemDeleteSchema, params); err != nil {
 		return customerror.New(http.StatusInternalServerError, "schema delete job execution", err.Error())
