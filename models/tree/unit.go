@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
-	"github.com/agile-work/srv-mdl-shared/models/security"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -28,14 +27,13 @@ type Unit struct {
 	CreatedAt       time.Time               `json:"created_at" sql:"created_at"`
 	UpdatedBy       string                  `json:"updated_by" sql:"updated_by"`
 	UpdatedAt       time.Time               `json:"updated_at" sql:"updated_at"`
-	Permissions     []security.Permission   `json:"permissions" sql:"permissions" field:"jsonb"`
 }
 
 // Create persists the struct creating a new object in the database
-func (u *Unit) Create(trs *db.Transaction, columns ...string) error {
-	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTreeUnits, u, columns...)
+func (u *Unit) Create(trs *db.Transaction) error {
+	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTreeUnits, u)
 	if err != nil {
-		customerror.New(http.StatusInternalServerError, "level create", err.Error())
+		customerror.New(http.StatusInternalServerError, "unit create", err.Error())
 	}
 	u.ID = id
 	return nil
@@ -49,7 +47,7 @@ func (u *Unit) Load() error {
 			builder.Equal("code", u.Code),
 		),
 	}); err != nil {
-		return customerror.New(http.StatusInternalServerError, "level load", err.Error())
+		return customerror.New(http.StatusInternalServerError, "unit load", err.Error())
 	}
 	return nil
 }
@@ -63,7 +61,7 @@ func (u *Unit) Update(trs *db.Transaction, columns []string, translations map[st
 
 	if len(columns) > 0 {
 		if err := db.UpdateStructTx(trs.Tx, constants.TableCoreTreeUnits, u, opt, strings.Join(columns, ",")); err != nil {
-			return customerror.New(http.StatusInternalServerError, "level update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "unit update", err.Error())
 		}
 	}
 
@@ -76,7 +74,7 @@ func (u *Unit) Update(trs *db.Transaction, columns []string, translations map[st
 		}
 		statement.Where(opt.Conditions)
 		if _, err := trs.Query(statement); err != nil {
-			return customerror.New(http.StatusInternalServerError, "level update", err.Error())
+			return customerror.New(http.StatusInternalServerError, "unit update", err.Error())
 		}
 	}
 
@@ -91,7 +89,7 @@ func (u *Unit) Delete(trs *db.Transaction) error {
 			builder.Equal("code", u.Code),
 		),
 	}); err != nil {
-		return customerror.New(http.StatusInternalServerError, "level delete", err.Error())
+		return customerror.New(http.StatusInternalServerError, "unit delete", err.Error())
 	}
 	return nil
 }
@@ -100,9 +98,22 @@ func (u *Unit) Delete(trs *db.Transaction) error {
 type Units []Unit
 
 // LoadAll defines all instances from the object
-func (l *Units) LoadAll(opt *db.Options) error {
-	if err := db.SelectStruct(constants.TableCoreTreeUnits, l, opt); err != nil {
-		return customerror.New(http.StatusInternalServerError, "levels load", err.Error())
+func (u *Units) LoadAll(opt *db.Options) error {
+	if err := db.SelectStruct(constants.TableCoreTreeUnits, u, opt); err != nil {
+		return customerror.New(http.StatusInternalServerError, "units load", err.Error())
+	}
+	return nil
+}
+
+// Create persists the struct creating a new object in the database
+func (u *Units) Create(trs *db.Transaction, treeCode string) error {
+	for _, unit := range *u {
+		unit.TreeCode = treeCode
+		id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTreeUnits, unit)
+		if err != nil {
+			customerror.New(http.StatusInternalServerError, "unit create", err.Error())
+		}
+		unit.ID = id
 	}
 	return nil
 }

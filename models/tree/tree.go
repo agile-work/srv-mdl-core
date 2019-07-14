@@ -31,7 +31,7 @@ type Tree struct {
 }
 
 // Create persists the struct creating a new object in the database
-func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
+func (t *Tree) Create(trs *db.Transaction) error {
 	if t.ContentCode != "" {
 		prefix, err := util.GetContentPrefix(t.ContentCode)
 		if err != nil {
@@ -46,7 +46,7 @@ func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
 		return customerror.New(http.StatusInternalServerError, "tree create", "invalid code length")
 	}
 
-	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTrees, t, columns...)
+	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTrees, t)
 	if err != nil {
 		customerror.New(http.StatusInternalServerError, "tree create", err.Error())
 	}
@@ -57,7 +57,7 @@ func (t *Tree) Create(trs *db.Transaction, columns ...string) error {
 		Name:        t.Name,
 		Description: t.Description,
 		Type:        constants.DatasetDynamic,
-		Definitions: []byte(fmt.Sprintf(`{"query": "SELECT unity.code, unity.label AS name, array_to_string(array_agg(unity_path.name ORDER BY unity_path.path), '->') AS path, unity.active FROM (SELECT lang.value AS label, unity.tree_code, unity.code, unity.path, unity.name, unity.active from core_tree_units AS unity, LATERAL jsonb_each_text(unity.name) AS lang) AS unity JOIN (SELECT lang.value AS name, unity_path.path, unity_path.active FROM core_tree_units AS unity_path, LATERAL jsonb_each_text(unity_path.name) AS lang) AS unity_path ON unity_path.path @> unity.path and unity_path.active = unity.active WHERE unity.tree_code = '%s' GROUP BY unity.code, unity.label, unity.path, unity.active ORDER BY path`, t.Code)),
+		Definitions: []byte(fmt.Sprintf(`{"query": "SELECT unity.code, unity.label AS name, array_to_string(array_agg(unity_path.name ORDER BY unity_path.path), '->') AS path, unity.active FROM (SELECT lang.value AS label, unity.tree_code, unity.code, unity.path, unity.name, unity.active from core_tree_units AS unity, LATERAL jsonb_each_text(unity.name) AS lang) AS unity JOIN (SELECT lang.value AS name, unity_path.path, unity_path.active FROM core_tree_units AS unity_path, LATERAL jsonb_each_text(unity_path.name) AS lang) AS unity_path ON unity_path.path @> unity.path and unity_path.active = unity.active WHERE unity.tree_code = '%s' GROUP BY unity.code, unity.label, unity.path, unity.active ORDER BY path"}`, t.Code)),
 		CreatedBy:   t.CreatedBy,
 		CreatedAt:   t.CreatedAt,
 		UpdatedBy:   t.UpdatedBy,

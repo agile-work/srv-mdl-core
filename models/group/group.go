@@ -8,33 +8,35 @@ import (
 	"time"
 
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
-	"github.com/agile-work/srv-mdl-shared/models/security"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-mdl-shared/util"
+	sharedUtil "github.com/agile-work/srv-shared/util"
 
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
 	"github.com/agile-work/srv-shared/sql-builder/db"
 )
 
-// Group defines the struct of this object
+// Group struct
 type Group struct {
-	ID          string                    `json:"id" sql:"id" pk:"true"`
-	Code        string                    `json:"code" sql:"code"`
-	ContentCode string                    `json:"content_code" sql:"content_code"`
-	Name        translation.Translation   `json:"name" sql:"name" field:"jsonb" validate:"required"`
-	Description translation.Translation   `json:"description" sql:"description" field:"jsonb" validate:"required"`
-	Permissions []security.Permission     `json:"permissions" sql:"permissions" field:"jsonb"`
-	Users       []security.PermissionUser `json:"users" sql:"users" field:"jsonb"`
-	Active      bool                      `json:"active" sql:"active"`
-	CreatedBy   string                    `json:"created_by" sql:"created_by"`
-	CreatedAt   time.Time                 `json:"created_at" sql:"created_at"`
-	UpdatedBy   string                    `json:"updated_by" sql:"updated_by"`
-	UpdatedAt   time.Time                 `json:"updated_at" sql:"updated_at"`
+	ID          string                  `json:"id" sql:"id" pk:"true"`
+	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
+	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
+	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
+	ContentCode string                  `json:"content_code,omitempty" sql:"content_code"`
+	Type        string                  `json:"group_type" sql:"group_type" validate:"required"`
+	Users       SecurityUser            `json:"users" sql:"users" field:"jsonb"`
+	Permissions Permission              `json:"permissions" sql:"permissions" field:"jsonb"`
+	Tree        SecurityTree            `json:"tree,omitempty" sql:"tree" field:"jsonb"`
+	Active      bool                    `json:"active" sql:"active"`
+	CreatedBy   string                  `json:"created_by" sql:"created_by"`
+	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
+	UpdatedBy   string                  `json:"updated_by" sql:"updated_by"`
+	UpdatedAt   time.Time               `json:"updated_at" sql:"updated_at"`
 }
 
 // Create persists the struct creating a new object in the database
-func (g *Group) Create(trs *db.Transaction, columns ...string) error {
+func (g *Group) Create(trs *db.Transaction) error {
 	if g.ContentCode != "" {
 		prefix, err := util.GetContentPrefix(g.ContentCode)
 		if err != nil {
@@ -46,10 +48,10 @@ func (g *Group) Create(trs *db.Transaction, columns ...string) error {
 	}
 
 	if len(g.Code) > constants.DatabaseMaxLength {
-		return customerror.New(http.StatusInternalServerError, "group create", "invalid code lenght")
+		return customerror.New(http.StatusInternalServerError, "group create", "invalid code length")
 	}
 
-	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreGroups, g, columns...)
+	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreGroups, g)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "group create", err.Error())
 	}
@@ -110,6 +112,104 @@ func (g *Group) Delete(trs *db.Transaction) error {
 	return nil
 }
 
+// UpdateTree update tree in group
+func (g *Group) UpdateTree(trs *db.Transaction) error {
+	group := &Group{Code: g.Code}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	if group.Type != constants.GroupTypeTree {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group type")
+	}
+
+	total, err := db.Count("id", constants.TableCoreTreeUnits, &db.Options{
+		Conditions: builder.And(
+			builder.Equal("tree_code", g.Tree.Code),
+			builder.Equal("code", g.Tree.Unit),
+		),
+	})
+	if err != nil {
+		return customerror.New(http.StatusInternalServerError, "group tree update", err.Error())
+	}
+	if total <= 0 {
+		return customerror.New(http.StatusInternalServerError, "group tree update", "invalid tree")
+	}
+	return g.Update(trs, []string{"tree"}, map[string]string{})
+}
+
+// UpdateUsers update users in group
+func (g *Group) UpdateUsers(trs *db.Transaction, username string, columns []string) error {
+	group := &Group{Code: g.Code}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	// TODO: Make a validation about usernames
+	if len(g.Users.IncludeResources) > 0 {
+		for username, security := range g.Users.IncludeResources {
+			if security.Operator == "include" {
+				if len(group.Users.IncludeResources) == 0 {
+					group.Users.IncludeResources = map[string]SecurityAudit{}
+				}
+				securityAudit := SecurityAudit{}
+				util.SetSchemaAudit(http.MethodPost, username, &securityAudit)
+				if _, ok := group.Users.IncludeResources[username]; !ok {
+					group.Users.IncludeResources[username] = securityAudit
+				}
+			} else {
+				delete(group.Users.IncludeResources, username)
+			}
+		}
+	} else if sharedUtil.Contains(columns, "include_resources") {
+		group.Users.IncludeResources = g.Users.IncludeResources
+	}
+	if len(g.Users.ExcludeResources) > 0 {
+		for username, security := range g.Users.ExcludeResources {
+			if security.Operator == "include" {
+				if len(group.Users.ExcludeResources) == 0 {
+					group.Users.ExcludeResources = map[string]SecurityAudit{}
+				}
+				securityAudit := SecurityAudit{}
+				util.SetSchemaAudit(http.MethodPost, username, &securityAudit)
+				if _, ok := group.Users.IncludeResources[username]; !ok {
+					group.Users.ExcludeResources[username] = securityAudit
+				}
+			} else {
+				delete(group.Users.ExcludeResources, username)
+			}
+		}
+	} else if sharedUtil.Contains(columns, "exclude_resources") {
+		group.Users.ExcludeResources = g.Users.ExcludeResources
+	}
+	if sharedUtil.Contains(columns, "wildcard") {
+		// TODO: Make a validation about wildcard value
+		group.Users.Wildcard = g.Users.Wildcard
+	}
+	httpMethod := http.MethodPatch
+	util.SetSchemaAudit(httpMethod, username, group)
+	if group.Users.alreadyCreated() {
+		httpMethod = http.MethodPost
+	}
+	util.SetSchemaAudit(httpMethod, username, &group.Users)
+	return group.Update(trs, []string{"users"}, map[string]string{})
+}
+
+func (u SecurityUser) alreadyCreated() bool {
+	if u.CreatedBy == "" {
+		return false
+	}
+	return true
+}
+
 // Groups defines the array struct of this object
 type Groups []Group
 
@@ -125,107 +225,3 @@ func (g *Groups) LoadAll(opt *db.Options) error {
 func Validate(codes []string) error {
 	return nil
 }
-
-// // InsertUserInGroup persists the request creating a new object in the database
-// func InsertUserInGroup(r *http.Request) *mdlShared.Response {
-// 	groupID := chi.URLParam(r, "group_id")
-// 	userID := chi.URLParam(r, "user_id")
-// 	user := models.GroupUser{
-// 		ID: userID,
-// 	}
-
-// 	response := db.GetResponse(r, &user, "InsertUserInGroup")
-// 	if response.Code != http.StatusOK {
-// 		return response
-// 	}
-
-// 	idColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
-// 	sql.InsertStructToJSON("users", shared.TableCoreGroups, &user, builder.Equal(idColumn, groupID))
-// 	return response
-// }
-
-// // RemoveUserFromGroup deletes object from the database
-// func RemoveUserFromGroup(r *http.Request) *mdlShared.Response {
-// 	response := &mdlShared.Response{
-// 		Code: http.StatusOK,
-// 	}
-// 	groupID := chi.URLParam(r, "group_id")
-// 	userID := chi.URLParam(r, "user_id")
-
-// 	err := sql.DeleteStructFromJSON(userID, groupID, "users", shared.TableCoreGroups)
-// 	if err != nil {
-// 		response.Code = http.StatusInternalServerError
-// 		response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorParsingRequest, "RemoveUserFromGroup", err.Error()))
-
-// 		return response
-// 	}
-
-// 	return response
-// }
-
-// // LoadAllGroupPermissions return all instances from the object
-// func LoadAllGroupPermissions(r *http.Request) *mdlShared.Response {
-// 	permissions := []models.Permission{}
-
-// 	groupID := chi.URLParam(r, "group_id")
-// 	groupIDColumn := fmt.Sprintf("%s.parent_id", shared.ViewCoreStructurePermissions)
-// 	languageCode := r.Header.Get("Content-Language")
-// 	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreStructurePermissions)
-// 	condition := builder.And(
-// 		builder.Equal(groupIDColumn, groupID),
-// 		builder.Equal(languageCodeColumn, languageCode),
-// 	)
-
-// 	return db.Load(r, &permissions, "LoadAllGroupPermissions", shared.ViewCoreStructurePermissions, condition)
-// }
-
-// // InsertGroupPermission persists the request body creating a new object in the database
-// func InsertGroupPermission(r *http.Request) *mdlShared.Response {
-// 	groupID := chi.URLParam(r, "group_id")
-// 	permission := models.Permission{}
-
-// 	response := db.GetResponse(r, &permission, "InsertGroupPermission")
-// 	if response.Code != http.StatusOK {
-// 		return response
-// 	}
-// 	permission.ID = sql.UUID()
-
-// 	idColumn := fmt.Sprintf("%s.id", shared.TableCoreGroups)
-// 	sql.InsertStructToJSON("permissions", shared.TableCoreGroups, &permission, builder.Equal(idColumn, groupID))
-// 	resp.Data = permission
-// 	return response
-// }
-
-// // RemoveGroupPermission deletes object from the database
-// func RemoveGroupPermission(r *http.Request) *mdlShared.Response {
-// 	response := &mdlShared.Response{
-// 		Code: http.StatusOK,
-// 	}
-// 	groupID := chi.URLParam(r, "group_id")
-// 	permissionID := chi.URLParam(r, "permission_id")
-
-// 	err := sql.DeleteStructFromJSON(permissionID, groupID, "permissions", shared.TableCoreGroups)
-// 	if err != nil {
-// 		response.Code = http.StatusInternalServerError
-// 		response.Errors = append(response.Errors, mdlShared.NewResponseError(shared.ErrorParsingRequest, "RemoveGroupPermissionFromGroup", err.Error()))
-
-// 		return response
-// 	}
-
-// 	return response
-// }
-
-// // LoadAllGroupsByUser return all instances from the object
-// func LoadAllGroupsByUser(r *http.Request) *mdlShared.Response {
-// 	viewUserGroups := []models.ViewUserGroup{}
-// 	userID := chi.URLParam(r, "user_id")
-// 	userIDColumn := fmt.Sprintf("%s.user_id", shared.ViewCoreUserGroups)
-// 	languageCode := r.Header.Get("Content-Language")
-// 	languageCodeColumn := fmt.Sprintf("%s.language_code", shared.ViewCoreUserGroups)
-// 	condition := builder.And(
-// 		builder.Equal(userIDColumn, userID),
-// 		builder.Equal(languageCodeColumn, languageCode),
-// 	)
-
-// 	return db.Load(r, &viewUserGroups, "LoadAllGroupsByUser", shared.ViewCoreUserGroups, condition)
-// }

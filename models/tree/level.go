@@ -27,8 +27,8 @@ type Level struct {
 }
 
 // Create persists the struct creating a new object in the database
-func (l *Level) Create(trs *db.Transaction, columns ...string) error {
-	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTreeLevels, l, columns...)
+func (l *Level) Create(trs *db.Transaction) error {
+	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreTreeLevels, l)
 	if err != nil {
 		customerror.New(http.StatusInternalServerError, "level create", err.Error())
 	}

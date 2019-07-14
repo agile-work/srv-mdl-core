@@ -1,4 +1,4 @@
-package admin
+package group
 
 import (
 	"net/http"
@@ -147,44 +147,75 @@ func DeleteGroup(res http.ResponseWriter, req *http.Request) {
 	resp.Render(res, req)
 }
 
-// AddUserInGroup sends the request to service deleting an user
-func AddUserInGroup(res http.ResponseWriter, req *http.Request) {
+// UpdateTree sends the request to model updating a tree in group
+func UpdateTree(res http.ResponseWriter, req *http.Request) {
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	grp := &group.Group{}
+	tree := &group.SecurityTree{}
 	resp := response.New()
 
+	if err := resp.Parse(req, tree); err != nil {
+		resp.NewError("UpdateGroup group new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	grp.Code = chi.URLParam(req, "group_code")
+	grp.Tree = *tree
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdateGroup group new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	if err := grp.UpdateTree(trs); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdateGroup", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = grp
 	resp.Render(res, req)
 }
 
-// DeleteGroupUser sends the request to service deleting a user from a group
-func DeleteGroupUser(res http.ResponseWriter, req *http.Request) {
+// UpdateUsers sends the request to model updating a users in group
+func UpdateUsers(res http.ResponseWriter, req *http.Request) {
+	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
+	grp := &group.Group{}
+	users := &group.SecurityUser{}
 	resp := response.New()
 
-	resp.Render(res, req)
-}
+	if err := resp.Parse(req, users); err != nil {
+		resp.NewError("UpdateUsers group new transaction", err)
+		resp.Render(res, req)
+		return
+	}
 
-// GetAllGroupPermissions return all group instances from the service
-func GetAllGroupPermissions(res http.ResponseWriter, req *http.Request) {
-	resp := response.New()
+	body, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdateUsers group", err)
+	}
 
-	resp.Render(res, req)
-}
+	grp.Code = chi.URLParam(req, "group_code")
+	grp.Users = *users
 
-// PostGroupPermission sends the request to service creating a permission in a group
-func PostGroupPermission(res http.ResponseWriter, req *http.Request) {
-	resp := response.New()
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdateUsers group new transaction", err)
+		resp.Render(res, req)
+		return
+	}
 
-	resp.Render(res, req)
-}
-
-// DeleteGroupPermission sends the request to service deleting a permission from a group
-func DeleteGroupPermission(res http.ResponseWriter, req *http.Request) {
-	resp := response.New()
-
-	resp.Render(res, req)
-}
-
-// GetAllGroupsByUser sends the request to service deleting a permission from a group
-func GetAllGroupsByUser(res http.ResponseWriter, req *http.Request) {
-	resp := response.New()
-
+	if err := grp.UpdateUsers(trs, req.Header.Get("Username"), util.GetBodyColumns(body)); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdateUsers", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = grp
 	resp.Render(res, req)
 }
