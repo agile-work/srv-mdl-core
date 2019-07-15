@@ -51,6 +51,7 @@ func (g *Group) Create(trs *db.Transaction) error {
 		return customerror.New(http.StatusInternalServerError, "group create", "invalid code length")
 	}
 
+	translation.SetStructTranslationsLanguage(g, "all")
 	id, err := db.InsertStructTx(trs.Tx, constants.TableCoreGroups, g)
 	if err != nil {
 		return customerror.New(http.StatusInternalServerError, "group create", err.Error())
@@ -94,7 +95,7 @@ func (g *Group) Update(trs *db.Transaction, columns []string, translations map[s
 			statement.Values(jsonVal)
 		}
 		statement.Where(opt.Conditions)
-		if _, err := trs.Query(statement); err != nil {
+		if err := trs.Exec(statement); err != nil {
 			return customerror.New(http.StatusInternalServerError, "group update", err.Error())
 		}
 	}

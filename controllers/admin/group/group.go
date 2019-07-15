@@ -16,7 +16,6 @@ import (
 
 // PostGroup sends the request to model creating a new group
 func PostGroup(res http.ResponseWriter, req *http.Request) {
-	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	group := &group.Group{}
 	resp := response.New()
 
@@ -33,7 +32,6 @@ func PostGroup(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	translation.FieldsRequestLanguageCode = "all"
 	if err := group.Create(trs); err != nil {
 		trs.Rollback()
 		resp.NewError("PostGroup", err)
@@ -48,7 +46,6 @@ func PostGroup(res http.ResponseWriter, req *http.Request) {
 
 // GetAllGroups return all group instances from the model
 func GetAllGroups(res http.ResponseWriter, req *http.Request) {
-	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
 	metadata := response.Metadata{}
@@ -64,6 +61,7 @@ func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 		resp.Render(res, req)
 		return
 	}
+	translation.SetSliceTranslationsLanguage(groups, req.Header.Get("Content-Language"))
 	resp.Data = groups
 	resp.Metadata = metadata
 	resp.Render(res, req)
@@ -71,7 +69,6 @@ func GetAllGroups(res http.ResponseWriter, req *http.Request) {
 
 // GetGroup return only one group from the model
 func GetGroup(res http.ResponseWriter, req *http.Request) {
-	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	resp := response.New()
 
 	group := &group.Group{Code: chi.URLParam(req, "group_code")}
@@ -80,13 +77,13 @@ func GetGroup(res http.ResponseWriter, req *http.Request) {
 		resp.Render(res, req)
 		return
 	}
+	translation.SetStructTranslationsLanguage(group, req.Header.Get("Content-Language"))
 	resp.Data = group
 	resp.Render(res, req)
 }
 
 // UpdateGroup sends the request to model updating a group
 func UpdateGroup(res http.ResponseWriter, req *http.Request) {
-	translation.FieldsRequestLanguageCode = req.Header.Get("Content-Language")
 	group := &group.Group{}
 	resp := response.New()
 
