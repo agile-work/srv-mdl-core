@@ -19,6 +19,11 @@ func GroupRoutes() *chi.Mux {
 
 		r.Patch("/{group_code}/trees", controller.UpdateTree)
 		r.Patch("/{group_code}/users", controller.UpdateUsers)
+
+		r.Patch("/{group_code}/permissions/widgets", controller.UpdatePermissionWidgets)
+		r.Delete("/{group_code}/permissions/widgets/{widget_code}", controller.DeletePermissionWidgets)
+		r.Patch("/{group_code}/permissions/processes", controller.UpdatePermissionProcesses)
+		r.Delete("/{group_code}/permissions/processes/{process_code}", controller.DeletePermissionProcesses)
 	})
 
 	return r

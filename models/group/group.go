@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	mdlShared "github.com/agile-work/srv-mdl-shared"
 	"github.com/agile-work/srv-mdl-shared/models/customerror"
 	"github.com/agile-work/srv-mdl-shared/models/translation"
 	"github.com/agile-work/srv-mdl-shared/util"
-	sharedUtil "github.com/agile-work/srv-shared/util"
 
 	"github.com/agile-work/srv-shared/constants"
 	"github.com/agile-work/srv-shared/sql-builder/builder"
@@ -25,9 +25,7 @@ type Group struct {
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb" validate:"required"`
 	ContentCode string                  `json:"content_code,omitempty" sql:"content_code"`
 	Type        string                  `json:"group_type" sql:"group_type" validate:"required"`
-	Users       SecurityUser            `json:"users" sql:"users" field:"jsonb"`
-	Permissions Permission              `json:"permissions" sql:"permissions" field:"jsonb"`
-	Tree        SecurityTree            `json:"tree,omitempty" sql:"tree" field:"jsonb"`
+	Definitions Definitions             `json:"definitions" sql:"definitions" field:"jsonb" updatable:"false"`
 	Active      bool                    `json:"active" sql:"active"`
 	CreatedBy   string                  `json:"created_by" sql:"created_by"`
 	CreatedAt   time.Time               `json:"created_at" sql:"created_at"`
@@ -47,8 +45,23 @@ func (g *Group) Create(trs *db.Transaction) error {
 		g.Code = fmt.Sprintf("%s_%s", "custom", g.Code)
 	}
 
-	if len(g.Code) > constants.DatabaseMaxLength {
-		return customerror.New(http.StatusInternalServerError, "group create", "invalid code length")
+	if g.Type == constants.GroupTypeTree {
+		if err := mdlShared.Validate.Struct(g.Definitions.Tree); err != nil {
+			return customerror.New(http.StatusBadRequest, "tree invalid body", err.Error())
+		}
+
+		total, err := db.Count("id", constants.TableCoreTreeUnits, &db.Options{
+			Conditions: builder.And(
+				builder.Equal("tree_code", g.Definitions.Tree.Code),
+				builder.Equal("code", g.Definitions.Tree.Unit),
+			),
+		})
+		if err != nil {
+			return customerror.New(http.StatusInternalServerError, "group tree create", err.Error())
+		}
+		if total <= 0 {
+			return customerror.New(http.StatusInternalServerError, "group tree create", "invalid tree")
+		}
 	}
 
 	translation.SetStructTranslationsLanguage(g, "all")
@@ -113,102 +126,45 @@ func (g *Group) Delete(trs *db.Transaction) error {
 	return nil
 }
 
-// UpdateTree update tree in group
-func (g *Group) UpdateTree(trs *db.Transaction) error {
-	group := &Group{Code: g.Code}
-	if err := group.Load(); err != nil {
-		return err
+func (g *Group) handleUsers(def *Definitions, attribute, username string, columns map[string]interface{}) {
+	var groupUsers, defUsers map[string]SecurityAudit
+
+	groupUsers = g.Definitions.getUserIncludeResource()
+	defUsers = def.getUserIncludeResource()
+
+	if attribute == "exclude_resources" {
+		groupUsers = g.Definitions.getUserExcludeResource()
+		defUsers = def.getUserExcludeResource()
 	}
 
-	if group.ID == "" {
-		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
-	}
-
-	if group.Type != constants.GroupTypeTree {
-		return customerror.New(http.StatusBadRequest, "load group", "invalid group type")
-	}
-
-	total, err := db.Count("id", constants.TableCoreTreeUnits, &db.Options{
-		Conditions: builder.And(
-			builder.Equal("tree_code", g.Tree.Code),
-			builder.Equal("code", g.Tree.Unit),
-		),
-	})
-	if err != nil {
-		return customerror.New(http.StatusInternalServerError, "group tree update", err.Error())
-	}
-	if total <= 0 {
-		return customerror.New(http.StatusInternalServerError, "group tree update", "invalid tree")
-	}
-	return g.Update(trs, []string{"tree"}, map[string]string{})
-}
-
-// UpdateUsers update users in group
-func (g *Group) UpdateUsers(trs *db.Transaction, username string, columns []string) error {
-	group := &Group{Code: g.Code}
-	if err := group.Load(); err != nil {
-		return err
-	}
-
-	if group.ID == "" {
-		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
-	}
-
-	// TODO: Make a validation about usernames
-	if len(g.Users.IncludeResources) > 0 {
-		for username, security := range g.Users.IncludeResources {
+	if len(defUsers) > 0 {
+		for user, security := range defUsers {
 			if security.Operator == "include" {
-				if len(group.Users.IncludeResources) == 0 {
-					group.Users.IncludeResources = map[string]SecurityAudit{}
+				if len(groupUsers) == 0 {
+					groupUsers = map[string]SecurityAudit{}
 				}
 				securityAudit := SecurityAudit{}
-				util.SetSchemaAudit(http.MethodPost, username, &securityAudit)
-				if _, ok := group.Users.IncludeResources[username]; !ok {
-					group.Users.IncludeResources[username] = securityAudit
+				util.SetSchemaAudit(true, username, &securityAudit)
+				if _, ok := groupUsers[user]; !ok {
+					groupUsers[user] = securityAudit
 				}
 			} else {
-				delete(group.Users.IncludeResources, username)
+				delete(groupUsers, user)
 			}
 		}
-	} else if sharedUtil.Contains(columns, "include_resources") {
-		group.Users.IncludeResources = g.Users.IncludeResources
+	} else if _, ok := columns[attribute]; ok {
+		groupUsers = defUsers
 	}
-	if len(g.Users.ExcludeResources) > 0 {
-		for username, security := range g.Users.ExcludeResources {
-			if security.Operator == "include" {
-				if len(group.Users.ExcludeResources) == 0 {
-					group.Users.ExcludeResources = map[string]SecurityAudit{}
-				}
-				securityAudit := SecurityAudit{}
-				util.SetSchemaAudit(http.MethodPost, username, &securityAudit)
-				if _, ok := group.Users.IncludeResources[username]; !ok {
-					group.Users.ExcludeResources[username] = securityAudit
-				}
-			} else {
-				delete(group.Users.ExcludeResources, username)
-			}
-		}
-	} else if sharedUtil.Contains(columns, "exclude_resources") {
-		group.Users.ExcludeResources = g.Users.ExcludeResources
-	}
-	if sharedUtil.Contains(columns, "wildcard") {
-		// TODO: Make a validation about wildcard value
-		group.Users.Wildcard = g.Users.Wildcard
-	}
-	httpMethod := http.MethodPatch
-	util.SetSchemaAudit(httpMethod, username, group)
-	if group.Users.alreadyCreated() {
-		httpMethod = http.MethodPost
-	}
-	util.SetSchemaAudit(httpMethod, username, &group.Users)
-	return group.Update(trs, []string{"users"}, map[string]string{})
-}
 
-func (u SecurityUser) alreadyCreated() bool {
-	if u.CreatedBy == "" {
-		return false
+	if g.Definitions.Users == nil {
+		g.Definitions.Users = &SecurityUser{}
 	}
-	return true
+
+	if attribute == "exclude_resources" {
+		g.Definitions.Users.ExcludeResources = groupUsers
+	} else {
+		g.Definitions.Users.IncludeResources = groupUsers
+	}
 }
 
 // Groups defines the array struct of this object
