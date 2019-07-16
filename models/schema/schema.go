@@ -26,6 +26,7 @@ type Schema struct {
 	Parent      string                  `json:"parent_id" sql:"parent_id"`
 	IsExtension bool                    `json:"is_extension" sql:"is_extension"`
 	Module      bool                    `json:"module" sql:"module"`
+	Modules     []string                `json:"modules" sql:"modules" field:"jsonb"`
 	Active      bool                    `json:"active" sql:"active"`
 	Status      string                  `json:"status" sql:"status"`
 	CreatedBy   string                  `json:"created_by" sql:"created_by"`
