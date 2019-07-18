@@ -16,9 +16,10 @@ func ModuleRoutes() *chi.Mux {
 		r.Get("/{module_code}", controller.GetModule)
 		r.Patch("/{module_code}", controller.UpdateModule)
 		r.Delete("/{module_code}", controller.DeleteModule)
-
+		//Module Instances
 		r.Post("/{module_code}/instances", controller.AddModuleInstance)
-		r.Delete("/{module_code}/instances", controller.DeleteModuleInstance)
+		r.Patch("/{module_code}/instances/{instance_id}", controller.UpdateModuleInstance)
+		r.Delete("/{module_code}/instances/{instance_id}", controller.DeleteModuleInstance)
 	})
 
 	return r

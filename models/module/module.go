@@ -73,7 +73,7 @@ func (m *Module) Update(trs *db.Transaction, columns []string, translations map[
 	return nil
 }
 
-// Load defines only one object from the database
+// Load returns only one object from the database
 func (m *Module) Load() error {
 	if err := db.SelectStruct(constants.TableCoreModules, m, &db.Options{
 		Conditions: builder.Equal("code", m.Code),
