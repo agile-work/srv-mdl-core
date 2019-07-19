@@ -52,7 +52,7 @@ func UpdateModuleInstance(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	columns, err := util.GetBodyUpdatableJSONColumns(req, instance, req.Header.Get("username"), req.Header.Get("Content-Language"))
+	columns, err := util.GetBodyUpdatableJSONColumns(req, false, instance, req.Header.Get("username"), req.Header.Get("Content-Language"))
 	if err != nil {
 		resp.NewError("UpdateModuleInstance request parse", err)
 		resp.Render(res, req)

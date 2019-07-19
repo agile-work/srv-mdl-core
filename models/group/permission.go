@@ -186,16 +186,47 @@ func (d *Definitions) UpdatePermissionWidgets(trs *db.Transaction, groupCode str
 		permissions = &Permission{}
 	}
 
+	widgets := make(map[string]SecurityWidget)
 	for widgetCode, value := range columns {
 		securityWidget := SecurityWidget{}
 		if err := util.DataToStruct(value, &securityWidget); err != nil {
 			return customerror.New(http.StatusBadRequest, "users parse", err.Error())
 		}
-		if len(permissions.Widgets) == 0 {
-			permissions.Widgets = make(map[string]SecurityWidget)
-		}
-		permissions.Widgets[widgetCode] = securityWidget
+		widgets[widgetCode] = securityWidget
 	}
+
+	group.Definitions.Permissions.Widgets = widgets
+
+	if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreGroups, "definitions", "{permissions}", group.Definitions.Permissions, builder.Equal("code", groupCode)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "group permission widget update", err.Error())
+	}
+	return nil
+}
+
+// UpdatePermissionWidget update widget in permission group
+func (d *Definitions) UpdatePermissionWidget(trs *db.Transaction, groupCode, widgetCode string, columns map[string]interface{}) error {
+	group := &Group{Code: groupCode}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	permissions := group.Definitions.Permissions
+	if permissions == nil {
+		permissions = &Permission{}
+	}
+
+	securityWidget := SecurityWidget{}
+	if err := util.DataToStruct(columns, &securityWidget); err != nil {
+		return customerror.New(http.StatusBadRequest, "users parse", err.Error())
+	}
+	if len(permissions.Widgets) == 0 {
+		permissions.Widgets = make(map[string]SecurityWidget)
+	}
+	permissions.Widgets[widgetCode] = securityWidget
 
 	group.Definitions.Permissions = permissions
 
@@ -205,8 +236,8 @@ func (d *Definitions) UpdatePermissionWidgets(trs *db.Transaction, groupCode str
 	return nil
 }
 
-// DeletePermissionWidgets delete widget in permission group
-func (d *Definitions) DeletePermissionWidgets(trs *db.Transaction, groupCode, widgetCode string) error {
+// DeletePermissionWidget delete widget in permission group
+func (d *Definitions) DeletePermissionWidget(trs *db.Transaction, groupCode, widgetCode string) error {
 	group := &Group{Code: groupCode}
 	if err := group.Load(); err != nil {
 		return err
@@ -227,7 +258,7 @@ func (d *Definitions) DeletePermissionWidgets(trs *db.Transaction, groupCode, wi
 	return nil
 }
 
-// UpdatePermissionProcesses update processe in permission group
+// UpdatePermissionProcesses update process in permission group
 func (d *Definitions) UpdatePermissionProcesses(trs *db.Transaction, groupCode string, columns map[string]interface{}) error {
 	group := &Group{Code: groupCode}
 	if err := group.Load(); err != nil {
@@ -243,16 +274,47 @@ func (d *Definitions) UpdatePermissionProcesses(trs *db.Transaction, groupCode s
 		permissions = &Permission{}
 	}
 
+	processes := make(map[string]SecurityProcess)
 	for processCode, value := range columns {
 		securityProcess := SecurityProcess{}
 		if err := util.DataToStruct(value, &securityProcess); err != nil {
 			return customerror.New(http.StatusBadRequest, "users parse", err.Error())
 		}
-		if len(permissions.Processes) == 0 {
-			permissions.Processes = make(map[string]SecurityProcess)
-		}
-		permissions.Processes[processCode] = securityProcess
+		processes[processCode] = securityProcess
 	}
+
+	group.Definitions.Permissions.Processes = processes
+
+	if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreGroups, "definitions", "{permissions}", group.Definitions.Permissions, builder.Equal("code", groupCode)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "group permission process update", err.Error())
+	}
+	return nil
+}
+
+// UpdatePermissionProcess update processe in permission group
+func (d *Definitions) UpdatePermissionProcess(trs *db.Transaction, groupCode, processCode string, columns map[string]interface{}) error {
+	group := &Group{Code: groupCode}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	permissions := group.Definitions.Permissions
+	if permissions == nil {
+		permissions = &Permission{}
+	}
+
+	securityProcess := SecurityProcess{}
+	if err := util.DataToStruct(columns, &securityProcess); err != nil {
+		return customerror.New(http.StatusBadRequest, "users parse", err.Error())
+	}
+	if len(permissions.Processes) == 0 {
+		permissions.Processes = make(map[string]SecurityProcess)
+	}
+	permissions.Processes[processCode] = securityProcess
 
 	group.Definitions.Permissions = permissions
 
@@ -262,8 +324,8 @@ func (d *Definitions) UpdatePermissionProcesses(trs *db.Transaction, groupCode s
 	return nil
 }
 
-// DeletePermissionProcesses delete process in permission group
-func (d *Definitions) DeletePermissionProcesses(trs *db.Transaction, groupCode, processCode string) error {
+// DeletePermissionProcess delete process in permission group
+func (d *Definitions) DeletePermissionProcess(trs *db.Transaction, groupCode, processCode string) error {
 	group := &Group{Code: groupCode}
 	if err := group.Load(); err != nil {
 		return err
@@ -280,6 +342,137 @@ func (d *Definitions) DeletePermissionProcesses(trs *db.Transaction, groupCode, 
 		if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreGroups, "definitions", "{permissions}", group.Definitions.Permissions, builder.Equal("code", groupCode)); err != nil {
 			return customerror.New(http.StatusInternalServerError, "group permission process delete", err.Error())
 		}
+	}
+	return nil
+}
+
+// UpdatePermissionSchema update schema in permission group
+func (d *Definitions) UpdatePermissionSchema(trs *db.Transaction, groupCode, schemaCode string, columns map[string]interface{}) error {
+	group := &Group{Code: groupCode}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	permissions := group.Definitions.Permissions
+	if permissions == nil {
+		permissions = &Permission{}
+	}
+
+	securitySchema := SecuritySchema{}
+	if err := util.DataToStruct(columns, &securitySchema); err != nil {
+		return customerror.New(http.StatusBadRequest, "users parse", err.Error())
+	}
+	if len(permissions.Schemas) == 0 {
+		permissions.Schemas = make(map[string]SecuritySchema)
+	}
+	permissions.Schemas[schemaCode] = securitySchema
+
+	group.Definitions.Permissions = permissions
+
+	if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreGroups, "definitions", "{permissions}", group.Definitions.Permissions, builder.Equal("code", groupCode)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "group permission schema update", err.Error())
+	}
+	return nil
+}
+
+// DeletePermissionSchema delete schema in permission group
+func (d *Definitions) DeletePermissionSchema(trs *db.Transaction, groupCode, schemaCode string) error {
+	group := &Group{Code: groupCode}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	permissions := group.Definitions.Permissions
+
+	if permissions != nil {
+		delete(permissions.Schemas, schemaCode)
+		if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreGroups, "definitions", "{permissions}", group.Definitions.Permissions, builder.Equal("code", groupCode)); err != nil {
+			return customerror.New(http.StatusInternalServerError, "group permission schema delete", err.Error())
+		}
+	}
+	return nil
+}
+
+// UpdatePermissionSchemaInstance update schema in permission group
+func (d *Definitions) UpdatePermissionSchemaInstance(trs *db.Transaction, groupCode, schemaCode string, columns map[string]interface{}) error {
+	group := &Group{Code: groupCode}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	permissions := group.Definitions.Permissions
+	if permissions == nil {
+		permissions = &Permission{}
+	}
+
+	securityInstance := SecurityInstance{}
+	if err := util.DataToStruct(columns, &securityInstance); err != nil {
+		return customerror.New(http.StatusBadRequest, "users parse", err.Error())
+	}
+	if len(permissions.Schemas) == 0 {
+		permissions.Schemas = make(map[string]SecuritySchema)
+	}
+	if _, ok := permissions.Schemas[schemaCode]; !ok {
+		permissions.Schemas[schemaCode] = SecuritySchema{}
+	}
+	securitySchema := permissions.Schemas[schemaCode]
+	securitySchema.Instances = securityInstance
+	permissions.Schemas[schemaCode] = securitySchema
+
+	group.Definitions.Permissions = permissions
+
+	if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreGroups, "definitions", "{permissions}", group.Definitions.Permissions, builder.Equal("code", groupCode)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "group permission schema update", err.Error())
+	}
+	return nil
+}
+
+// UpdatePermissionSchemaField update schema in permission group
+func (d *Definitions) UpdatePermissionSchemaField(trs *db.Transaction, groupCode, schemaCode string, columns map[string]interface{}) error {
+	group := &Group{Code: groupCode}
+	if err := group.Load(); err != nil {
+		return err
+	}
+
+	if group.ID == "" {
+		return customerror.New(http.StatusBadRequest, "load group", "invalid group code")
+	}
+
+	permissions := group.Definitions.Permissions
+	if permissions == nil {
+		permissions = &Permission{}
+	}
+
+	securityField := SecurityField{}
+	if err := util.DataToStruct(columns, &securityField); err != nil {
+		return customerror.New(http.StatusBadRequest, "users parse", err.Error())
+	}
+	if len(permissions.Schemas) == 0 {
+		permissions.Schemas = make(map[string]SecuritySchema)
+	}
+	if _, ok := permissions.Schemas[schemaCode]; !ok {
+		permissions.Schemas[schemaCode] = SecuritySchema{}
+	}
+	securitySchema := permissions.Schemas[schemaCode]
+	securitySchema.Fields = securityField
+	permissions.Schemas[schemaCode] = securitySchema
+
+	group.Definitions.Permissions = permissions
+
+	if err := db.UpdateJSONAttributeTx(trs.Tx, constants.TableCoreGroups, "definitions", "{permissions}", group.Definitions.Permissions, builder.Equal("code", groupCode)); err != nil {
+		return customerror.New(http.StatusInternalServerError, "group permission schema update", err.Error())
 	}
 	return nil
 }

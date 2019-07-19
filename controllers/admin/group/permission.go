@@ -100,21 +100,51 @@ func UpdatePermissionWidgets(res http.ResponseWriter, req *http.Request) {
 	resp.Render(res, req)
 }
 
-// DeletePermissionWidgets sends the request to model updating a users in group
-func DeletePermissionWidgets(res http.ResponseWriter, req *http.Request) {
+// UpdatePermissionWidget sends the request to model updating a users in group
+func UpdatePermissionWidget(res http.ResponseWriter, req *http.Request) {
 	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		resp.NewError("DeletePermissionWidgets new transaction", err)
+		resp.NewError("UpdatePermissionWidget new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	columns, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdatePermissionWidget request parse", err)
 		resp.Render(res, req)
 		return
 	}
 
 	groupDefinition := &group.Definitions{}
-	if err := groupDefinition.DeletePermissionWidgets(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "widget_code")); err != nil {
+	if err := groupDefinition.UpdatePermissionWidget(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "widget_code"), columns); err != nil {
 		trs.Rollback()
-		resp.NewError("DeletePermissionWidgets", err)
+		resp.NewError("UpdatePermissionWidget", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = groupDefinition
+	resp.Render(res, req)
+}
+
+// DeletePermissionWidget sends the request to model updating a users in group
+func DeletePermissionWidget(res http.ResponseWriter, req *http.Request) {
+	resp := response.New()
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("DeletePermissionWidget new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	groupDefinition := &group.Definitions{}
+	if err := groupDefinition.DeletePermissionWidget(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "widget_code")); err != nil {
+		trs.Rollback()
+		resp.NewError("DeletePermissionWidget", err)
 		resp.Render(res, req)
 		return
 	}
@@ -153,21 +183,164 @@ func UpdatePermissionProcesses(res http.ResponseWriter, req *http.Request) {
 	resp.Render(res, req)
 }
 
-// DeletePermissionProcesses sends the request to model updating a users in group
-func DeletePermissionProcesses(res http.ResponseWriter, req *http.Request) {
+// UpdatePermissionProcess sends the request to model updating a users in group
+func UpdatePermissionProcess(res http.ResponseWriter, req *http.Request) {
 	resp := response.New()
 
 	trs, err := db.NewTransaction()
 	if err != nil {
-		resp.NewError("DeletePermissionProcesses new transaction", err)
+		resp.NewError("UpdatePermissionProcess new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	columns, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdatePermissionProcess request parse", err)
 		resp.Render(res, req)
 		return
 	}
 
 	groupDefinition := &group.Definitions{}
-	if err := groupDefinition.DeletePermissionProcesses(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "process_code")); err != nil {
+	if err := groupDefinition.UpdatePermissionProcess(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "process_code"), columns); err != nil {
 		trs.Rollback()
-		resp.NewError("DeletePermissionProcesses", err)
+		resp.NewError("UpdatePermissionProcess", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = groupDefinition
+	resp.Render(res, req)
+}
+
+// DeletePermissionProcess sends the request to model updating a users in group
+func DeletePermissionProcess(res http.ResponseWriter, req *http.Request) {
+	resp := response.New()
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("DeletePermissionProcess new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	groupDefinition := &group.Definitions{}
+	if err := groupDefinition.DeletePermissionProcess(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "process_code")); err != nil {
+		trs.Rollback()
+		resp.NewError("DeletePermissionProcess", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = groupDefinition
+	resp.Render(res, req)
+}
+
+// UpdatePermissionSchema sends the request to model updating a users in group
+func UpdatePermissionSchema(res http.ResponseWriter, req *http.Request) {
+	resp := response.New()
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdatePermissionSchema new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	columns, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdatePermissionSchema request parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	groupDefinition := &group.Definitions{}
+	if err := groupDefinition.UpdatePermissionSchema(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "schema_code"), columns); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdatePermissionSchema", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = groupDefinition
+	resp.Render(res, req)
+}
+
+// DeletePermissionSchema sends the request to model updating a users in group
+func DeletePermissionSchema(res http.ResponseWriter, req *http.Request) {
+	resp := response.New()
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("DeletePermissionSchema new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	groupDefinition := &group.Definitions{}
+	if err := groupDefinition.DeletePermissionSchema(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "schema_code")); err != nil {
+		trs.Rollback()
+		resp.NewError("DeletePermissionSchema", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = groupDefinition
+	resp.Render(res, req)
+}
+
+// UpdatePermissionSchemaInstance sends the request to model updating a users in group
+func UpdatePermissionSchemaInstance(res http.ResponseWriter, req *http.Request) {
+	resp := response.New()
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdatePermissionSchemaInstance new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	columns, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdatePermissionSchemaInstance request parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	groupDefinition := &group.Definitions{}
+	if err := groupDefinition.UpdatePermissionSchemaInstance(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "schema_code"), columns); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdatePermissionSchemaInstance", err)
+		resp.Render(res, req)
+		return
+	}
+	trs.Commit()
+	resp.Data = groupDefinition
+	resp.Render(res, req)
+}
+
+// UpdatePermissionSchemaField sends the request to model updating a users in group
+func UpdatePermissionSchemaField(res http.ResponseWriter, req *http.Request) {
+	resp := response.New()
+
+	trs, err := db.NewTransaction()
+	if err != nil {
+		resp.NewError("UpdatePermissionSchemaField new transaction", err)
+		resp.Render(res, req)
+		return
+	}
+
+	columns, err := util.GetBodyMap(req)
+	if err != nil {
+		resp.NewError("UpdatePermissionSchemaField request parse", err)
+		resp.Render(res, req)
+		return
+	}
+
+	groupDefinition := &group.Definitions{}
+	if err := groupDefinition.UpdatePermissionSchemaField(trs, chi.URLParam(req, "group_code"), chi.URLParam(req, "schema_code"), columns); err != nil {
+		trs.Rollback()
+		resp.NewError("UpdatePermissionSchemaField", err)
 		resp.Render(res, req)
 		return
 	}

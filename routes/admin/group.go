@@ -21,9 +21,20 @@ func GroupRoutes() *chi.Mux {
 		r.Patch("/{group_code}/users", controller.UpdateUsers)
 
 		r.Patch("/{group_code}/permissions/widgets", controller.UpdatePermissionWidgets)
-		r.Delete("/{group_code}/permissions/widgets/{widget_code}", controller.DeletePermissionWidgets)
+		r.Patch("/{group_code}/permissions/widgets/{widget_code}", controller.UpdatePermissionWidget)
+		r.Delete("/{group_code}/permissions/widgets/{widget_code}", controller.DeletePermissionWidget)
 		r.Patch("/{group_code}/permissions/processes", controller.UpdatePermissionProcesses)
-		r.Delete("/{group_code}/permissions/processes/{process_code}", controller.DeletePermissionProcesses)
+		r.Patch("/{group_code}/permissions/processes/{process_code}", controller.UpdatePermissionProcess)
+		r.Delete("/{group_code}/permissions/processes/{process_code}", controller.DeletePermissionProcess)
+		r.Patch("/{group_code}/permissions/schemas/{schema_code}", controller.UpdatePermissionSchema)
+		r.Delete("/{group_code}/permissions/schemas/{schema_code}", controller.DeletePermissionSchema)
+		r.Patch("/{group_code}/permissions/schemas/{schema_code}/instances", controller.UpdatePermissionSchemaInstance)
+		r.Patch("/{group_code}/permissions/schemas/{schema_code}/fields", controller.UpdatePermissionSchemaField)
+		r.Patch("/{group_code}/permissions/schemas/{schema_code}/modules/{module_code}", controller.UpdatePermissionModule)
+		r.Delete("/{group_code}/permissions/schemas/{schema_code}/modules/{module_code}", controller.DeletePermissionModule)
+		r.Patch("/{group_code}/permissions/schemas/{schema_code}/modules/{module_code}/instances", controller.UpdatePermissionModuleInstance)
+		r.Patch("/{group_code}/permissions/schemas/{schema_code}/modules/{module_code}/fields", controller.UpdatePermissionModuleField)
+		r.Patch("/{group_code}/permissions/schemas/{schema_code}/modules/{module_code}/features/{feature_code}", controller.UpdatePermissionModuleFeature)
 	})
 
 	return r
