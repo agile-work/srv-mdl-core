@@ -6,5 +6,9 @@ import (
 )
 
 func main() {
-	mdlShared.ListenAndServe("Core", "localhost", 3010, routes.Setup())
+	mdlShared.ListenAndServe("core", "localhost", 3010, install, routes.Setup())
+}
+
+func install() error {
+	return nil
 }

@@ -19,8 +19,6 @@ func Routes() *chi.Mux {
 		r.Mount("/groups", GroupRoutes())
 		r.Mount("/currencies", CurrencyRoutes())
 		r.Mount("/jobs", JobRoutes())
-		r.Mount("/modules", ModuleRoutes())
-
 	})
 
 	return r

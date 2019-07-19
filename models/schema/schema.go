@@ -18,7 +18,7 @@ import (
 
 // Schema defines the struct of this object
 type Schema struct {
-	ID          string                  `json:"id" sql:"id" pk:"true"`
+	ID          string                  `json:"id" sql:"id"`
 	Code        string                  `json:"code" sql:"code" updatable:"false" validate:"required"`
 	ContentCode string                  `json:"content_code" sql:"content_code"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
