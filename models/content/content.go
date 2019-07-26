@@ -21,6 +21,7 @@ type Content struct {
 	Prefix      string                  `json:"prefix" sql:"prefix" validate:"required"`
 	Name        translation.Translation `json:"name" sql:"name" field:"jsonb" validate:"required"`
 	Description translation.Translation `json:"description" sql:"description" field:"jsonb"`
+	IsModule    bool                    `json:"is_module" sql:"is_module"`
 	IsSystem    bool                    `json:"is_system" sql:"is_system"`
 	Active      bool                    `json:"active" sql:"active"`
 	CreatedBy   string                  `json:"created_by" sql:"created_by"`
